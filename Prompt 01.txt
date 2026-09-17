@@ -1,0 +1,103 @@
+# MISSION BRIEF: Hyperlocal Multi-Vendor Service & Commerce Super-App (Iran Localization)
+
+You are an expert full-stack software architect and senior security engineer. You will build a scalable, highly secure hyperlocal marketplace platform tailored for the Iranian market. 
+
+## Architectural Foundations
+- **Backend:** NestJS, TypeScript, TypeORM/Prisma, PostgreSQL with PostGIS extension, Redis (caching and BullMQ).
+- **Frontend:** Next.js (App Router), Tailwind CSS, Lucide Icons, MapLibre GL JS, Service Workers (PWA).
+- **Security Baseline:** OWASP Top 10 mitigation, Helmet, strict CORS, SMS OTP authentication with Redis rate-limiting (sliding window), polymorphic input validation (class-validator), server-side sanitization, idempotent transaction handling, and role-based access control (RBAC).
+- **Map Stack:** Vector maps supporting Iranian coordinates with server-side spatial clustering (`ST_ClusterKMeans` or geohashing) to prevent mass location scraping.
+
+---
+
+## EXECUTION RULES FOR MEMO X
+1. You must execute this project strictly phase-by-phase.
+2. Complete all deliverables in the current phase and write comprehensive automated integration/unit tests.
+3. Verify that all security assertions, error handling, and type-safety constraints pass.
+4. Do NOT write code for the next phase until the current phase is fully completed, tested, and validated.
+
+---
+
+### PHASE 1: Core Authentication, RBAC & Profile Engine
+- **Objective:** Establish the secure user/vendor management system.
+- **Tasks:**
+  1. Implement phone number authentication with Iranian format validation (`+98` / `09...`).
+  2. Implement an SMS OTP pipeline using Redis for rate-limiting (max 3 requests per 5 minutes per IP/number, OTP TTL of 120 seconds, secure random 5-digit code).
+  3. Set up JWT architecture: Short-lived access tokens (15m) and secure HttpOnly rotating refresh tokens stored in Redis.
+  4. Build RBAC supporting three primary identities:
+     - `CONSUMER`: Regular service receiver.
+     - `VENDOR`: Service/goods provider (requires sub-categorization: Medical/Visit, Food/E-commerce, Field-Service/Quote, Beauty/Time-slot).
+     - `ADMIN`: Platform operator.
+  5. Profile models: Handle vendor business profiles (business name, category tags, national identity/verification status, description, social media links).
+- **Tests & Criteria:**
+  - Prevent brute-force attacks via Redis rate limits.
+  - Verify token expiration and secure rotation.
+  - Validate that unauthorized requests to protected routes return 401/403 with localized error envelopes.
+
+---
+
+### PHASE 2: PostGIS Geolocation & Hyperlocal Map Engine
+- **Objective:** Enable high-performance spatial indexing, vendor mapping, and privacy controls.
+- **Tasks:**
+  1. Initialize PostgreSQL with PostGIS. Store vendor locations using geometry point fields (`SRID 4326`).
+  2. Implement `GET /api/v1/map/vendors` supporting bounding box (`bbox`), radius search (`ST_DWithin`), category filtering, and server-side clustering for zoom-out states.
+  3. Implement **Fuzzy Location Mode**: For home-based vendors, return an obfuscated coordinate polygon (radius offset of 200m) to protect personal privacy until an order is confirmed.
+  4. Frontend integration: MapLibre GL map view with smooth marker clustering, user geolocation permission handling, and dynamic bottom-sheet vendor previews.
+  5. Implement vendor location search with debounced radius filtering (e.g., 1km, 3km, 5km, 10km).
+- **Tests & Criteria:**
+  - Spatial queries execute using geospatial indices (`GIST`) in under 50ms for 10,000 mocked points.
+  - Assert coordinate obfuscation works for private/home vendors.
+
+---
+
+### PHASE 3: Business Feed, Social Commerce & Media Management
+- **Objective:** Provide Instagram-like profile pages, dynamic catalogs, and local social feeds.
+- **Tasks:**
+  1. Implement vendor timeline models: Posts, image galleries, captions, product taggings, and price tags.
+  2. Implement a unified media upload pipeline:
+     - Enforce MIME-type verification (magic bytes check, not just file extensions).
+     - Restrict file sizes (images max 5MB).
+     - Sanitize filenames to prevent path traversal and strip EXIF location metadata for safety.
+  3. Create an engagement subsystem: Local reviews with star ratings, authenticated customer feedback (only users who purchased or attended appointments can review), and vendor public replies.
+  4. Frontend feed: Build a responsive, fast-loading business profile page containing the bio, portfolio gallery, product catalogue, map snippet, and verified reviews.
+- **Tests & Criteria:**
+  - Reject malicious file payloads (e.g., polyglot files, SVG with embedded scripts).
+  - Verify that only completed orders/appointments unlock the rating submission endpoint.
+
+---
+
+### PHASE 4: Polymorphic Transaction Engine (Appointments, Orders & RFQ)
+- **Objective:** Support disparate business models within a single unified checkout and tracking architecture.
+- **Tasks:**
+  1. **Time-Slot Engine (Doctors, Salons, Consultants):**
+     - Calendar schedule setup with configurable working hours, break periods, and appointment duration.
+     - Atomic slot booking to prevent race conditions (use database row locks: `SELECT ... FOR UPDATE`).
+  2. **Cart & Delivery Engine (Home Chefs, Bakeries, Crafts):**
+     - Product catalogue with inventory counts, variations (e.g., portion sizes), preparation lead time, and delivery zone validation.
+  3. **RFQ / Reverse Bidding Engine (Mechanics, Plumbers, Home Repair):**
+     - Customer creates a "Job Request" with photos/audio description broadcasted to relevant vendors within selected radius.
+     - Vendors submit price quotes and time estimates; customer accepts and locks the chosen bid.
+  4. Unified Order lifecycle state machine: `PENDING_ACCEPTANCE` -> `PREPARING / SCHEDULED` -> `IN_PROGRESS` -> `COMPLETED` -> `DISPUTED` -> `CANCELLED`.
+- **Tests & Criteria:**
+  - Concurrency tests: Ensure two simultaneous booking requests for the same time slot result in exactly one confirmation and one 409 Conflict.
+  - State machine tests: Prevent invalid transition flows (e.g., transitioning from `CANCELLED` directly to `COMPLETED`).
+
+---
+
+### PHASE 5: Payments, Webhooks, Notifications & Final Hardening
+- **Objective:** Finalize financial flows, real-time messaging, and production hardening.
+- **Tasks:**
+  1. Payment Gateway integration: Abstracted interface supporting Iranian payment providers (Zarinpal, Saman, Pasargad/Shaparak flows).
+  2. Idempotency layer: Implement an `Idempotency-Key` header mechanism for all financial transactions to avoid double-charging during timeouts.
+  3. Webhook verification: Validate incoming bank callback payloads using signature verification and atomic database ledger updates.
+  4. Wallet Subsystem: Enable platform balance, refund processing, and automated vendor settlement calculations with commission deduction.
+  5. Real-Time & Push Notification engine:
+     - WebSocket gateway for instant quote delivery, booking confirmations, and in-app chat.
+     - Web Push Notifications (Service Worker) notifying vendors of new orders in their perimeter.
+  6. Final security audit: Content Security Policy (CSP), anti-clickjacking headers, sanitization of rich-text inputs (DOMPurify), and automated API documentation (Swagger/OpenAPI with schema validation).
+- **Tests & Criteria:**
+  - Verify that interrupted payment webhooks re-executed multiple times produce no double credit.
+  - End-to-end integration test from appointment booking/order creation through simulated bank payment and wallet settlement.
+
+---
+Begin with **PHASE 1**. Generate the directory structure, database schema migrations, and complete code for Phase 1. Do not proceed to Phase 2 until instructed.

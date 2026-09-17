@@ -1,0 +1,31 @@
+{
+  "name": "nazdik-store",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Hyperlocal multi-vendor marketplace for the Iranian market",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run start:local --workspace=@nazdik/api",
+    "dev:api": "npm run start:local --workspace=@nazdik/api",
+    "dev:nest": "npm run dev:nest --workspace=@nazdik/api",
+    "dev:web": "npm run dev --workspace=@nazdik/web",
+    "api:local": "npm run start:local --workspace=@nazdik/api",
+    "build": "npm run build --workspace=@nazdik/shared && npm run build --workspace=@nazdik/api && npm run build --workspace=@nazdik/web",
+    "test": "node apps/api/test/run-phase1.cjs && node apps/api/test/run-phase2.cjs && node apps/api/test/run-phase3.cjs && node apps/api/test/run-phase4.cjs && node apps/api/test/run-phase5.cjs",
+    "test:api": "node apps/api/test/run-phase1.cjs && node apps/api/test/run-phase2.cjs && node apps/api/test/run-phase3.cjs && node apps/api/test/run-phase4.cjs && node apps/api/test/run-phase5.cjs",
+    "test:phase2": "node apps/api/test/run-phase2.cjs",
+    "test:phase3": "node apps/api/test/run-phase3.cjs",
+    "test:phase4": "node apps/api/test/run-phase4.cjs",
+    "test:phase5": "node apps/api/test/run-phase5.cjs",
+    "test:jest": "npm run test:jest --workspace=@nazdik/api",
+    "lint": "npm run lint --workspace=@nazdik/api && npm run lint --workspace=@nazdik/web",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,495 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CONSUMER
+  VENDOR
+  ADMIN
+}
+
+enum VendorType {
+  MEDICAL
+  FOOD
+  ECOMMERCE
+  FIELD_SERVICE
+  BEAUTY
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id              String    @id @default(cuid())
+  phone           String    @unique
+  role            Role      @default(CONSUMER)
+  firstName       String?
+  lastName        String?
+  avatarUrl       String?
+  isPhoneVerified Boolean   @default(false)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  vendorProfile   VendorProfile?
+
+  @@index([role])
+  @@map("users")
+}
+
+model VendorProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName       String
+  vendorType         VendorType
+  categoryTags       String[]           @default([])
+  nationalId         String?            @unique
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  description        String?
+  socialLinks        Json               @default("{}")
+  isHomeBased        Boolean            @default(false)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  locations          VendorLocation[]
+  posts              VendorPost[]
+  products           Product[]
+  reviews            Review[]
+  schedules          VendorSchedule[]
+  orders             Order[]
+  jobRequests        JobRequest[]
+  jobQuotes          JobQuote[]
+
+  @@index([vendorType])
+  @@index([verificationStatus])
+  @@map("vendor_profiles")
+}
+
+/// Vendor pin + privacy controls. PostGIS geography lives beside lat/lng.
+model VendorLocation {
+  id              String   @id @default(cuid())
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  /// WGS84 latitude (SRID 4326)
+  lat             Float
+  /// WGS84 longitude
+  lng             Float
+  /// Public address label (never reverse-geocode home exact coords to clients)
+  address         String?
+  /// Service radius for field-service / delivery vendors
+  serviceRadiusKm Float    @default(3)
+  /// When true, map API returns obfuscated coords only
+  isHomeBased     Boolean  @default(false)
+  /// Soft-delete / temporarily hidden
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([vendorProfileId])
+  @@index([lat, lng])
+  @@index([isActive])
+  @@map("vendor_locations")
+}
+
+/// Audit trail for OTP issuance/verification (security forensics)
+model AuthAuditLog {
+  id        String   @id @default(cuid())
+  phone     String
+  action    String
+  ip        String?
+  userAgent String?
+  meta      Json     @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([phone, createdAt])
+  @@index([action, createdAt])
+  @@map("auth_audit_logs")
+}
+
+/// Uploaded file metadata (bytes stored on disk / object storage)
+model MediaAsset {
+  id           String   @id @default(cuid())
+  ownerId      String
+  filename     String
+  storagePath  String
+  mimeType     String
+  byteSize     Int
+  width        Int?
+  height       Int?
+  checksum     String
+  /// EXIF GPS and other sensitive tags stripped before persist
+  exifStripped Boolean @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([ownerId])
+  @@map("media_assets")
+}
+
+/// Instagram-like vendor timeline post
+model VendorPost {
+  id              String        @id @default(cuid())
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  caption         String
+  isPublished     Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  images          PostImage[]
+  productTags     PostProductTag[]
+
+  @@index([vendorProfileId, createdAt])
+  @@map("vendor_posts")
+}
+
+model PostImage {
+  id          String      @id @default(cuid())
+  postId      String
+  post        VendorPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  mediaId     String
+  altText     String?
+  sortOrder   Int         @default(0)
+
+  @@index([postId])
+  @@map("post_images")
+}
+
+/// Catalogue item attachable to posts
+model Product {
+  id              String        @id @default(cuid())
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  /// IRR / Toman — stored as integer minor units (Toman)
+  priceToman      Int
+  currency        String        @default("IRR")
+  stock           Int?
+  isActive        Boolean       @default(true)
+  coverMediaId    String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  postTags        PostProductTag[]
+
+  @@index([vendorProfileId, isActive])
+  @@map("products")
+}
+
+model PostProductTag {
+  postId    String
+  productId String
+  post      VendorPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Optional display price override on the post
+  priceToman Int?
+
+  @@id([postId, productId])
+  @@map("post_product_tags")
+}
+
+/// Phase 3 review — only users with a completed engagement may write
+model Review {
+  id              String        @id @default(cuid())
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  consumerId      String
+  rating          Int
+  body            String?
+  isVisible       Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  reply           ReviewReply?
+
+  @@unique([vendorProfileId, consumerId])
+  @@index([vendorProfileId, createdAt])
+  @@map("reviews")
+}
+
+model ReviewReply {
+  id        String   @id @default(cuid())
+  reviewId  String   @unique
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  body      String
+  createdAt DateTime @default(now())
+
+  @@map("review_replies")
+}
+
+/// Completed appointment/order that unlocks review rights.
+/// Phase 4 will replace this with the full polymorphic order engine.
+model CompletedEngagement {
+  id              String   @id @default(cuid())
+  vendorProfileId String
+  consumerId      String
+  kind            String   @default("ORDER") // ORDER | APPOINTMENT
+  completedAt     DateTime @default(now())
+  meta            Json     @default("{}")
+
+  @@unique([vendorProfileId, consumerId, kind])
+  @@index([consumerId])
+  @@index([vendorProfileId])
+  @@map("completed_engagements")
+}
+
+// ─── Phase 4: Polymorphic transaction engine ───
+
+enum OrderStatus {
+  PENDING_ACCEPTANCE
+  PREPARING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  CANCELLED
+}
+
+enum OrderKind {
+  APPOINTMENT
+  DELIVERY
+  RFQ
+}
+
+/// Working calendar for time-slot vendors (doctors, salons, consultants)
+model VendorSchedule {
+  id              String        @id @default(cuid())
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  /// 0=Sunday … 6=Saturday
+  weekday         Int
+  /// minutes from midnight
+  startMinute     Int
+  endMinute       Int
+  /// slot length minutes
+  slotMinutes     Int           @default(30)
+  /// break windows [{start,end}] minutes — Json array
+  breaks          Json          @default("[]")
+  isActive        Boolean       @default(true)
+
+  @@unique([vendorProfileId, weekday])
+  @@index([vendorProfileId])
+  @@map("vendor_schedules")
+}
+
+/// Bookable slot instances (materialized for atomic locks)
+model TimeSlot {
+  id              String        @id @default(cuid())
+  vendorProfileId String
+  /// ISO date YYYY-MM-DD
+  day             String
+  startMinute     Int
+  endMinute       Int
+  isBooked        Boolean       @default(false)
+  orderId         String?       @unique
+  createdAt       DateTime      @default(now())
+
+  @@unique([vendorProfileId, day, startMinute])
+  @@index([vendorProfileId, day])
+  @@map("time_slots")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  kind            OrderKind
+  status          OrderStatus   @default(PENDING_ACCEPTANCE)
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  consumerId      String
+  /// Total in Toman
+  totalToman      Int           @default(0)
+  note            String?
+  /// Delivery address label / RFQ location hint (never exact home coords of vendor)
+  deliveryAddress String?
+  meta            Json          @default("{}")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  lines           OrderLine[]
+  slot            TimeSlot?
+
+  @@index([consumerId, status])
+  @@index([vendorProfileId, status])
+  @@map("orders")
+}
+
+model OrderLine {
+  id          String  @id @default(cuid())
+  orderId     String
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String?
+  title       String
+  unitPriceToman Int
+  quantity    Int     @default(1)
+  /// variation label e.g. "large", "family"
+  variation   String?
+
+  @@index([orderId])
+  @@map("order_lines")
+}
+
+/// Customer job request broadcast to nearby vendors (RFQ)
+model JobRequest {
+  id              String        @id @default(cuid())
+  consumerId      String
+  title           String
+  description     String
+  /// photo media ids
+  mediaIds        String[]      @default([])
+  radiusKm        Float         @default(5)
+  lat             Float?
+  lng             Float?
+  budgetMaxToman Int?
+  status          String        @default("OPEN") // OPEN | LOCKED | CANCELLED | EXPIRED
+  lockedQuoteId   String?
+  vendorProfileId String?
+  vendorProfile   VendorProfile? @relation(fields: [vendorProfileId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  quotes          JobQuote[]
+
+  @@index([status, createdAt])
+  @@index([consumerId])
+  @@map("job_requests")
+}
+
+model JobQuote {
+  id              String        @id @default(cuid())
+  jobRequestId    String
+  jobRequest      JobRequest    @relation(fields: [jobRequestId], references: [id], onDelete: Cascade)
+  vendorProfileId String
+  vendorProfile   VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  priceToman      Int
+  /// hours until available
+  etaHours        Int
+  message         String?
+  status          String        @default("PENDING") // PENDING | ACCEPTED | REJECTED | WITHDRAWN
+  createdAt       DateTime      @default(now())
+
+  @@unique([jobRequestId, vendorProfileId])
+  @@index([jobRequestId])
+  @@map("job_quotes")
+}
+
+// ─── Phase 5: Payments, wallet, webhooks ───
+
+enum PaymentStatus {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+enum LedgerEntryType {
+  PAYMENT_IN
+  COMMISSION
+  VENDOR_CREDIT
+  REFUND_OUT
+  PAYOUT
+  ADJUSTMENT
+}
+
+model Wallet {
+  id          String   @id @default(cuid())
+  /// userId or vendorProfileId or "platform"
+  ownerId     String   @unique
+  ownerType   String   @default("USER") // USER | VENDOR | PLATFORM
+  /// balance in Toman (integer)
+  balanceToman Int    @default(0)
+  currency    String   @default("IRR")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  entries     LedgerEntry[]
+
+  @@index([ownerType])
+  @@map("wallets")
+}
+
+/// Double-entry style ledger — append-only
+model LedgerEntry {
+  id            String          @id @default(cuid())
+  walletId      String
+  wallet        Wallet          @relation(fields: [walletId], references: [id])
+  type          LedgerEntryType
+  amountToman   Int
+  /// Idempotency key for financial ops
+  idempotencyKey String         @unique
+  paymentId     String?
+  orderId       String?
+  meta          Json            @default("{}")
+  createdAt     DateTime        @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([paymentId])
+  @@map("ledger_entries")
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  orderId         String
+  /// platform | vendor wallet subject
+  amountToman     Int
+  commissionToman Int           @default(0)
+  provider        String        // zarinpal | saman | pasargad | mock
+  status          PaymentStatus @default(CREATED)
+  authority       String?       @unique
+  refId           String?
+  providerPayload Json          @default("{}")
+  /// Idempotency-Key from client
+  idempotencyKey  String?       @unique
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  webhooks        PaymentWebhook[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model PaymentWebhook {
+  id            String   @id @default(cuid())
+  paymentId     String
+  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  /// Dedup key = hash(provider + refId + status) — unique prevents double credit
+  eventKey      String   @unique
+  signature     String?
+  payload       Json
+  processed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([paymentId])
+  @@map("payment_webhooks")
+}
+
+model Settlement {
+  id            String   @id @default(cuid())
+  vendorProfileId String
+  /// Gross order amount
+  grossToman    Int
+  commissionToman Int
+  netToman      Int
+  paymentId     String?
+  settledAt     DateTime @default(now())
+
+  @@index([vendorProfileId])
+  @@map("settlements")
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  userId    String
+  channel   String   // websocket | push | sms
+  topic     String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("notification_logs")
+}

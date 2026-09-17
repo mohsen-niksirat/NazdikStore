@@ -1,0 +1,10 @@
+process.env.JWT_ACCESS_SECRET = 'test_access_secret';
+process.env.JWT_ACCESS_TTL = '15m';
+process.env.JWT_REFRESH_TTL_DAYS = '30';
+process.env.OTP_TTL_SECONDS = '120';
+process.env.OTP_LENGTH = '5';
+process.env.OTP_MAX_PER_WINDOW = '3';
+process.env.OTP_WINDOW_SECONDS = '300';
+process.env.SMS_PROVIDER = 'console';
+process.env.REDIS_URL = '';
+process.env.NODE_ENV = 'test';

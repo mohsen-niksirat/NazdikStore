@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --paper: #f7f4ef;
+  --ink: #1c2421;
+  --ink-muted: #5c6b66;
+  --accent: #0f6b5c;
+  --accent-soft: #d8ece7;
+  --gold: #c4922a;
+  --danger: #b42318;
+  --line: #e2ddd4;
+}
+
+@layer base {
+  html {
+    font-family: 'Vazirmatn', 'Segoe UI', Tahoma, sans-serif;
+  }
+
+  body {
+    @apply bg-paper text-ink antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex min-h-[48px] w-full items-center justify-center rounded-control bg-accent px-5 text-base font-medium text-white transition hover:brightness-110 active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input-field {
+    @apply min-h-[48px] w-full rounded-control border border-line bg-white px-4 text-ink placeholder:text-ink-muted/60 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20;
+  }
+
+  .chip-proximity {
+    @apply inline-flex items-center gap-1.5 rounded-full bg-accent-soft px-3 py-1 text-xs font-medium text-accent;
+  }
+
+  .card-auth {
+    @apply w-full max-w-auth rounded-card border border-line bg-white/70 p-6 shadow-sm backdrop-blur;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
