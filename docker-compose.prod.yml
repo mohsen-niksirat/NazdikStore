@@ -1,0 +1,96 @@
+# NazdikStore — production compose (Phase 10)
+# Requires Docker + full app images. For offline demo use docker-compose.demo.yml
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: nazdik-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nazdik}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-nazdik}
+    ports:
+      - "5432:5432"
+    volumes:
+      - nazdik_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: nazdik-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - nazdik_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  migrate:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - ./apps/api:/app
+      - ./packages/shared:/packages/shared
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nazdik}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nazdik}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy || echo 'prisma not installed in image — run migrate on host'"
+    profiles:
+      - migrate
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: nazdik-api
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgresql://${POSTGRES_USER:-nazdik}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nazdik}?schema=public
+      ALLOW_DEV_LOGIN: "0"
+      ALLOW_OFFLINE: "0"
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://nazdik.example}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+      PAYMENT_HMAC_SECRET: ${PAYMENT_HMAC_SECRET:?set PAYMENT_HMAC_SECRET}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-mock}
+      SMS_PROVIDER: ${SMS_PROVIDER:-console}
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/v1/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: nazdik-web
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://127.0.0.1:4000}
+      PORT: 3000
+    ports:
+      - "3300:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  nazdik_pg:
+  nazdik_redis:

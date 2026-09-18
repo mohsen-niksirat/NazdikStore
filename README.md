@@ -25,22 +25,22 @@ Issue template: **First-look checklist**
 
 | Phase | Status | Focus |
 |---|---|---|
-| **6** GIS map UX | ✅ | Category pins, ETA, Locate Me, 1.5km alerts, fuzzy rings |
-| **7** Jalali + chat | ✅ | شمسی booking, Asia/Tehran, buffer, order-isolated chat SENT/DELIVERED/READ |
-| 8 | pending | Vendor kanban + Sheba ledger |
-| 9 | pending | PWA performance |
-| 10 | pending | Security + production Docker |
+| **6** GIS map UX | ✅ | Pins, ETA, Locate Me, alert zones |
+| **7** Jalali + chat | ✅ | شمسی slots, buffer, order chat statuses |
+| **8** Vendor control | ✅ | Kanban, stock, vacation, Sheba payouts |
+| **9** PWA / offline | ✅ | SW cache strategy, manifest fa, offline page |
+| **10** Security / deploy | ✅ | CSP, rate limits, prod compose, backup script |
 
-Phase 7 tests: `node apps/api/test/run-prod-phase7.cjs`
+Phase tests:
+```bash
+node apps/api/test/run-prod-phase6.cjs
+node apps/api/test/run-prod-phase7.cjs
+node apps/api/test/run-prod-phase8.cjs
+node apps/api/test/run-prod-phase9-10.cjs
+```
 
-API (Phase 7):
-- `POST /api/v1/vendors/me/schedule-jalali`
-- `GET /api/v1/vendors/:id/slots-jalali?day=YYYY-MM-DD`
-- `POST /api/v1/orders/appointments-jalali`
-- `GET/POST /api/v1/chat/:orderId/messages`
-- `POST /api/v1/chat/:orderId/messages/:msgId/read`
-
-Shared: `packages/shared/src/jalali.ts`
+Production compose: `docker-compose.prod.yml`  
+Backup: `scripts/backup-postgres.sh`
 
 ## How to run (local demo)
 

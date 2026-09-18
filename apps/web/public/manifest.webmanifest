@@ -3,17 +3,37 @@
   "short_name": "نزدیک",
   "description": "بازارچه محلی چندفروشنده — فروشگاه‌ها و خدمات نزدیک شما",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#F7F4EF",
   "theme_color": "#0F6B5C",
   "dir": "rtl",
   "lang": "fa",
+  "categories": ["shopping", "business", "lifestyle"],
   "icons": [
     {
       "src": "/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
+  ],
+  "shortcuts": [
+    { "name": "نقشه", "url": "/map" },
+    { "name": "سبد", "url": "/cart" },
+    { "name": "نوبت", "url": "/book" }
   ]
 }
