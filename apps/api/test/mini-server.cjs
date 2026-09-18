@@ -26,7 +26,7 @@ process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev_access_cha
 process.env.REDIS_URL = '';
 process.env.PAYMENT_PROVIDER = process.env.PAYMENT_PROVIDER || 'mock';
 process.env.PLATFORM_COMMISSION_BPS = process.env.PLATFORM_COMMISSION_BPS || '1000';
-process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://127.0.0.1:3000,http://127.0.0.1:3300,http://127.0.0.1:5000';
+process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:3300,http://127.0.0.1:3300,http://localhost:5000,http://127.0.0.1:5000,http://localhost:4200,http://127.0.0.1:4200';
 
 installResolveHook({ root: ROOT, sharedSrc: SHARED_SRC, apiSrc: API_SRC });
 installTsHook();
@@ -123,9 +123,10 @@ function json(res, status, body) {
   const data = JSON.stringify(body);
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': process.env.CORS_ORIGINS || 'http://localhost:3000',
+    'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Idempotency-Key',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
   });
   res.end(data);
 }

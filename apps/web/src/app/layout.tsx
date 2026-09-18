@@ -3,6 +3,7 @@ import Link from 'next/link';
 import './globals.css';
 import { SWRegister } from './sw-register';
 import { NotificationBell } from '@/components/notification-bell';
+import { ApiStatusChip } from '@/components/api-status';
 
 export const metadata: Metadata = {
   title: 'نزدیک استور | NazdikStore',
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/profile" className="btn-ghost" style={{ minHeight: 36 }}>
                 پروفایل
               </Link>
+              <ApiStatusChip />
               <NotificationBell />
             </div>
           </div>

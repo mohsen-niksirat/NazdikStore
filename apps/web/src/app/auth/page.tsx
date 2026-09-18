@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Loader2, MapPin } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
 const OFFLINE_HINT =
-  'ارتباط با سرور برقرار نشد. API را بالا بیاورید: cd apps/api سپس npm run dev';
+  'ارتباط با سرور برقرار نشد. API را بالا بیاورید: cd apps/api سپس npm run dev (پورت ۴۰۰۰)';
 
 type Step = 'phone' | 'otp' | 'profile';
 
@@ -59,33 +59,20 @@ export default function AuthPage() {
   const requestOtp = useCallback(async (rawPhone: string) => {
     setLoading(true);
     setError(null);
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/otp/request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: rawPhone }),
-      });
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        const err = body.error as ApiError | undefined;
-        const retry = err?.details?.retryAfterSeconds;
-        setError(
-          err?.code === 'OTP_RATE_LIMITED'
-            ? `تعداد درخواست‌ها زیاد است${retry ? ` — ${retry} ثانیه دیگر` : ''}.`
-            : err?.message ?? 'ارسال کد تایید ناموفق بود.',
-        );
-        return;
-      }
-      setMaskedPhone(body.data.maskedPhone);
-      setPhone(body.data.phone);
-      setCountdown(body.data.expiresInSeconds ?? 120);
-      setStep('otp');
-      setTimeout(() => otpRefs.current[0]?.focus(), 50);
-    } catch {
-      setError(OFFLINE_HINT);
-    } finally {
-      setLoading(false);
+    const r = await apiFetch<{ phone: string; maskedPhone: string; expiresInSeconds?: number }>(
+      '/auth/otp/request',
+      { method: 'POST', body: JSON.stringify({ phone: rawPhone }) },
+    );
+    setLoading(false);
+    if (!r.ok || !r.data) {
+      setError(r.error || OFFLINE_HINT);
+      return;
     }
+    setMaskedPhone(r.data.maskedPhone);
+    setPhone(r.data.phone);
+    setCountdown(r.data.expiresInSeconds ?? 120);
+    setStep('otp');
+    setTimeout(() => otpRefs.current[0]?.focus(), 50);
   }, []);
 
   const verifyOtp = useCallback(async () => {
@@ -95,71 +82,53 @@ export default function AuthPage() {
     }
     setLoading(true);
     setError(null);
-    try {
-      const res = await fetch(`${API_URL}/api/v1/auth/otp/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ phone, code: otpValue }),
-      });
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        const err = body.error as ApiError | undefined;
-        setError(err?.message ?? 'کد تایید نادرست است.');
-        setOtp(['', '', '', '', '']);
-        otpRefs.current[0]?.focus();
-        return;
-      }
-      setAccessToken(body.data.tokens.accessToken);
-      if (body.data.requiresProfileCompletion) {
-        setStep('profile');
-      } else {
-        setSuccessMsg('ورود موفق بود. خوش آمدید!');
-      }
-    } catch {
-      setError(OFFLINE_HINT);
-    } finally {
-      setLoading(false);
+    const r = await apiFetch<{
+      user: unknown;
+      tokens: { accessToken: string };
+      requiresProfileCompletion?: boolean;
+    }>('/auth/otp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone, code: otpValue }),
+    });
+    setLoading(false);
+    if (!r.ok || !r.data) {
+      setError(r.error || OFFLINE_HINT);
+      setOtp(['', '', '', '', '']);
+      otpRefs.current[0]?.focus();
+      return;
     }
+    try {
+      localStorage.setItem('nazdik_token', r.data.tokens.accessToken);
+      localStorage.setItem('nazdik_user', JSON.stringify(r.data.user));
+    } catch { /* ignore */ }
+    setAccessToken(r.data.tokens.accessToken);
+    if (r.data.requiresProfileCompletion) setStep('profile');
+    else setSuccessMsg('ورود موفق بود. خوش آمدید!');
   }, [otpValue, phone]);
 
   const completeProfile = useCallback(async () => {
     if (!accessToken) return;
     setLoading(true);
     setError(null);
-    try {
-      const payload: Record<string, unknown> = {
-        role,
-        firstName: firstName || undefined,
-        lastName: lastName || undefined,
-      };
-      if (role === 'VENDOR') {
-        payload.businessName = businessName;
-        payload.vendorType = vendorType;
-      }
-      const res = await fetch(`${API_URL}/api/v1/auth/profile/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        setError((body.error as ApiError | undefined)?.message ?? 'تکمیل پروفایل ناموفق بود.');
-        return;
-      }
-      setSuccessMsg(
-        role === 'VENDOR'
-          ? 'پروفایل فروشنده ثبت شد.'
-          : 'پروفایل شما آماده است.',
-      );
-    } catch {
-      setError('ارتباط با سرور برقرار نشد.');
-    } finally {
-      setLoading(false);
+    const payload: Record<string, unknown> = {
+      role,
+      firstName: firstName || undefined,
+      lastName: lastName || undefined,
+    };
+    if (role === 'VENDOR') {
+      payload.businessName = businessName;
+      payload.vendorType = vendorType;
     }
+    const r = await apiFetch('/auth/profile/complete', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    setLoading(false);
+    if (!r.ok) {
+      setError(r.error || 'تکمیل پروفایل ناموفق بود.');
+      return;
+    }
+    setSuccessMsg(role === 'VENDOR' ? 'پروفایل فروشنده ثبت شد.' : 'پروفایل شما آماده است.');
   }, [accessToken, role, businessName, vendorType, firstName, lastName]);
 
   function onOtpChange(index: number, value: string) {
