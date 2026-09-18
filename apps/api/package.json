@@ -16,6 +16,7 @@
     "test:phase3": "node test/run-phase3.cjs",
     "test:phase4": "node test/run-phase4.cjs",
     "test:phase5": "node test/run-phase5.cjs",
+    "test:prod6": "node test/run-prod-phase6.cjs",
     "test:jest": "jest --config test/jest.config.js --runInBand",
     "test:watch": "jest --config test/jest.config.js --watch",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",

@@ -21,6 +21,29 @@ Issue template: **First-look checklist**
 | **v1.3–1.7** | RFQ, profile, admin data, map deep-link |
 | **v1.8–1.9** | Friend review kit + in-app demo tour |
 
+## Production Brief Phases 6–10
+
+| Phase | Status | Focus |
+|---|---|---|
+| **6** GIS map UX | ✅ | Category pins, ETA «متر فاصله»/پیاده/خودرو، Locate Me (bounds ایران)، منطقه هشدار ۱٫۵km، دایره خط‌چین حریم خصوصی، tile presets (OSM/Neshan/ParsiMap/custom) |
+| 7 | pending | Jalali schedule + WebSocket chat |
+| 8 | pending | Vendor kanban + Sheba ledger |
+| 9 | pending | PWA performance |
+| 10 | pending | Security + production Docker |
+
+Phase 6 tests: `node apps/api/test/run-prod-phase6.cjs`
+
+Map UI: `/map` — pin categories, ETA card, «موقعیت من»، «هشدار فروشنده جدید در ۱٫۵ کیلومتر»
+
+API (Phase 6):
+- `GET /api/v1/gis/tiles`
+- `POST /api/v1/gis/locate`
+- `POST /api/v1/gis/proximity`
+- `POST /api/v1/alert-zones`
+- `GET /api/v1/alert-zones/:id/nearby`
+
+Shared: `packages/shared/src/gis.ts`
+
 ## How to run (local demo)
 
 ```bat
