@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { EmptyState } from '@/components/empty-state';
+import { FeedEngagement } from '@/components/feed-engagement';
 
 const CATS = [
   { key: '', label: 'همه' },
@@ -91,6 +92,9 @@ export default function FeedPage() {
             <time className="caption block mt-2">
               {new Date(item.createdAt).toLocaleDateString('fa-IR')}
             </time>
+            <div className="mt-2">
+              <FeedEngagement postId={item.id} />
+            </div>
           </article>
         ))}
       </section>

@@ -258,6 +258,18 @@ function main() {
     console.warn('c1-routes not attached:', (err && err.message) || err);
   }
   try {
+    const { attachD1Routes } = require('./d1-routes.cjs');
+    attachD1Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('d1-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachD2Routes } = require('./d2-routes.cjs');
+    attachD2Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('d2-routes not attached:', (err && err.message) || err);
+  }
+  try {
     const { attachTrackingRoutes } = require('./phase11-routes.cjs');
     attachTrackingRoutes(ctx, match, json, readBody, authUser);
   } catch (err) {
