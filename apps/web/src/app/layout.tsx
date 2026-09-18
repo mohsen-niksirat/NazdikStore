@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
+import { MapPin } from 'lucide-react';
 import './globals.css';
 import { SWRegister } from './sw-register';
 import { NotificationBell } from '@/components/notification-bell';
@@ -8,7 +9,7 @@ import { ThemeBoot } from '@/components/theme-boot';
 
 export const metadata: Metadata = {
   title: 'نزدیک استور | NazdikStore',
-  description: 'فروشگاه‌ها و خدمات نزدیک شما — hyperlocal marketplace',
+  description: 'بازارچه محلی — فروشگاه‌ها و خدمات نزدیک شما',
   manifest: '/manifest.webmanifest',
   icons: { icon: '/icon.svg' },
 };
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0F6B5C',
+  themeColor: '#0D7A66',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -31,58 +32,33 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeBoot />
-        <header
-          style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 30,
-            background: 'rgba(247,244,239,0.92)',
-            borderBottom: '1px solid var(--line)',
-            backdropFilter: 'blur(8px)',
-          }}
-        >
-          <div
-            className="mx-auto"
-            style={{
-              width: 'min(100% - 24px, 440px)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              minHeight: 52,
-              gap: 8,
-            }}
-          >
-            <Link href="/" className="brand-title" style={{ fontSize: '1.05rem', textDecoration: 'none' }}>
-              نزدیک استور
+        <header className="app-header">
+          <div className="app-header-inner">
+            <Link href="/" className="logo">
+              <span className="logo-mark" aria-hidden>
+                <MapPin style={{ width: 16, height: 16 }} />
+              </span>
+              <span className="logo-text">نزدیک استور</span>
             </Link>
-            <div className="flex items-center gap-2">
-              <Link href="/tour" className="btn-ghost" style={{ minHeight: 36 }}>
+            <nav className="nav-chips" aria-label="ناوبری">
+              <Link href="/tour" className="nav-link">
                 تور
               </Link>
-              <Link href="/map" className="btn-ghost" style={{ minHeight: 36 }}>
+              <Link href="/map" className="nav-link">
                 نقشه
               </Link>
-              <Link href="/assistant" className="btn-ghost" style={{ minHeight: 36 }}>
-                دستیار
+              <Link href="/search" className="nav-link">
+                جستجو
               </Link>
-              <Link href="/settings" className="btn-ghost" style={{ minHeight: 36 }}>
+              <Link href="/settings" className="nav-link">
                 تنظیمات
-              </Link>
-              <Link href="/profile" className="btn-ghost" style={{ minHeight: 36 }}>
-                پروفایل
               </Link>
               <ApiStatusChip />
               <NotificationBell />
-            </div>
+            </nav>
           </div>
         </header>
-        <div
-          aria-hidden
-          style={{
-            height: 3,
-            background: 'linear-gradient(90deg, var(--accent), var(--gold), var(--accent))',
-          }}
-        />
+        <div className="brand-bar" aria-hidden />
         {children}
         <SWRegister />
       </body>

@@ -1,98 +1,69 @@
 import Link from 'next/link';
-import { MapPin, ShieldCheck, Store } from 'lucide-react';
+import { MapPin, ShieldCheck, Store, Sparkles } from 'lucide-react';
+
+const PATHS = [
+  { href: '/map', label: 'نقشه نزدیک', desc: 'فروشنده‌ها و ETA' },
+  { href: '/orders', label: 'سفارش‌های من', desc: 'پرداخت و رسید' },
+  { href: '/book', label: 'نوبت شمسی', desc: 'رزرو مطب / خدمات' },
+  { href: '/cart', label: 'سبد خرید', desc: 'کد تخفیف و پرداخت' },
+  { href: '/vendor', label: 'پنل فروشنده', desc: 'محصول و سفارش' },
+  { href: '/assistant', label: 'دستیار هوشمند', desc: 'جمله فارسی بگو' },
+];
 
 export default function HomePage() {
   return (
-    <main className="page page-center">
-      <header className="brand center mb-4">
-        <div className="chip-proximity mx-auto">
+    <main className="page">
+      <section className="hero">
+        <div className="chip-proximity">
           <MapPin aria-hidden />
-          فروشگاه‌های نزدیک شما
+          فروشگاه‌ها و خدمات نزدیک شما
         </div>
-        <h1 className="brand-title mt-3">نزدیک استور</h1>
-        <p className="brand-sub mt-2">
-          بازارچه محلی چندفروشنده — نوبت، سفارش و درخواست خدمات، نزدیک خودتان.
+        <h1 className="mt-3">بازارچه محلی، در دسترس شما</h1>
+        <p>
+          نوبت، سفارش غذا، تعمیر و خرید — همه از فروشنده‌های اطراف، با مکان دقیق و امن.
         </p>
-      </header>
+      </section>
 
-      <section className="card card-hero stack-4">
-        <div>
-          <h2 className="h1">شروع کنید</h2>
-          <p className="body-muted mt-2">
-            با شماره موبایل وارد شوید یا از تور دمو برای بررسی محصول استفاده کنید.
-          </p>
-          <div className="alert alert-ok mt-3 text-sm">
-            کد تخفیف امروز: <strong className="mono">PERCENT20</strong> — تا ۵۰ هزار تومان
+      <section className="card card-hero stack-3">
+        <div className="row-between">
+          <div>
+            <h2 className="h2">شروع سریع</h2>
+            <p className="body-muted mt-1 text-sm">کد تخفیف امروز فعال است</p>
           </div>
+          <span className="badge-hot">PERCENT20</span>
         </div>
         <div className="btn-row">
-          <Link href="/tour" className="btn-primary">
-            تور دمو (برای بررسی)
-          </Link>
-          <Link href="/auth" className="btn-secondary">
+          <Link href="/auth" className="btn-primary">
             ورود / ثبت‌نام
           </Link>
-          <Link href="/map" className="btn-secondary">
-            مشاهده نقشه نزدیک
+          <Link href="/tour" className="btn-secondary">
+            تور دمو
           </Link>
         </div>
       </section>
 
-      <section className="stack-3">
-        <div className="feature">
-          <ShieldCheck aria-hidden />
-          <span>ورود امن با پیامک — کد یک‌بارمصرف</span>
-        </div>
-        <div className="feature">
-          <Store aria-hidden />
-          <span>فروشنده‌ها: پزشکی، غذا، خدمات میدانی، زیبایی</span>
-        </div>
-        <div className="feature">
-          <MapPin aria-hidden />
-          <span>مکان خانگی فروشنده‌ها مبهم‌سازی می‌شود (۲۰۰ متر)</span>
-        </div>
+      <section className="grid grid-cols-2 gap-2">
+        {PATHS.map((p) => (
+          <Link key={p.href} href={p.href} className="list-card" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="h2">{p.label}</div>
+            <div className="caption mt-1">{p.desc}</div>
+          </Link>
+        ))}
       </section>
 
       <section className="stack-2">
-        <Link href="/feed" className="btn-secondary">
-          خوراک محلی
-        </Link>
-        <Link href="/vendor" className="btn-secondary">
-          پنل فروشنده
-        </Link>
-        <Link href="/cart" className="btn-secondary">
-          سبد خرید
-        </Link>
-        <Link href="/admin" className="btn-secondary">
-          کنسول ادمین
-        </Link>
-        <Link href="/messages" className="btn-secondary">
-          پیام‌ها و اعلان‌ها
-        </Link>
-        <Link href="/book" className="btn-secondary">
-          نوبت و درخواست خدمت
-        </Link>
-        <Link href="/rfq" className="btn-secondary">
-          پیشنهادهای خدمت
-        </Link>
-        <Link href="/orders" className="btn-secondary">
-          سفارش‌های من
-        </Link>
-        <Link href="/profile" className="btn-secondary">
-          پروفایل من
-        </Link>
-        <Link href="/assistant" className="btn-secondary">
-          دستیار هوشمند
-        </Link>
-        <Link href="/search" className="btn-secondary">
-          جستجو
-        </Link>
-        <Link href="/track" className="btn-secondary">
-          رهگیری پیک
-        </Link>
-        <Link href="/settings" className="btn-secondary">
-          تنظیمات
-        </Link>
+        <div className="feature">
+          <ShieldCheck aria-hidden />
+          <span>ورود امن با پیامک — بدون رمز عبور</span>
+        </div>
+        <div className="feature">
+          <Store aria-hidden />
+          <span>پزشکی · غذا · خدمات میدانی · زیبایی</span>
+        </div>
+        <div className="feature">
+          <Sparkles aria-hidden />
+          <span>مکان خانگی فروشنده‌ها مبهم‌سازی می‌شود (۲۰۰ متر)</span>
+        </div>
       </section>
 
       <p className="footer-note">NazdikStore · hyperlocal marketplace</p>
