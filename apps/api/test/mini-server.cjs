@@ -252,6 +252,12 @@ function main() {
     console.warn('p25-routes not attached:', (err && err.message) || err);
   }
   try {
+    const { attachC1Routes } = require('./c1-routes.cjs');
+    attachC1Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('c1-routes not attached:', (err && err.message) || err);
+  }
+  try {
     const { attachTrackingRoutes } = require('./phase11-routes.cjs');
     attachTrackingRoutes(ctx, match, json, readBody, authUser);
   } catch (err) {
