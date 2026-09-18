@@ -158,7 +158,7 @@ function load() {
   // simple user store
   const users = new Map(); // phone -> user
 
-  return { shared, otp, tokens, map, feed, reviews, slots, orders, rfq, wallet, payments, notif, users };
+  return { shared, otp, tokens, map, feed, reviews, slots, orders, rfq, wallet, payments, notifications: notif, notif, users };
 }
 
 function json(res, status, body) {
@@ -219,6 +219,12 @@ function main() {
     attachVendorRoutes(ctx, match, json, readBody, authUser);
   } catch (err) {
     console.warn('vendor-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachChatRoutes } = require('./chat-routes.cjs');
+    attachChatRoutes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('chat-routes not attached:', (err && err.message) || err);
   }
 
   const server = http.createServer(async (req, res) => {

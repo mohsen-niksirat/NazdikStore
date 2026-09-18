@@ -41,6 +41,9 @@ export default function HomePage() {
           <Link href="/admin" className="btn-secondary">
             کنسول ادمین
           </Link>
+          <Link href="/messages" className="btn-secondary">
+            پیام‌ها و اعلان‌ها
+          </Link>
         </div>
       </section>
 
