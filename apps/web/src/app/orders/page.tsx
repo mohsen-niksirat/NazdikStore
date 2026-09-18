@@ -86,6 +86,13 @@ export default function OrdersPage() {
             >
               چت
             </Link>
+            <Link
+              href={`/track?order=${encodeURIComponent(o.id)}`}
+              className="btn-secondary"
+              style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}
+            >
+              رهگیری
+            </Link>
           </div>
         </div>
       ))}

@@ -58,6 +58,7 @@ export default function AdminPage() {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [kycVp, setKycVp] = useState('vp_food_1');
 
   const load = useCallback(async () => {
     const r = await apiFetch<Overview>('/admin/overview');
@@ -191,6 +192,49 @@ export default function AdminPage() {
               ))}
             </section>
           )}
+
+          <section className="card stack-3">
+            <h2 className="h2">KYC فروشندگان</h2>
+            <div className="field">
+              <label>شناسه پروفایل فروشنده</label>
+              <input
+                className="input-field mono"
+                dir="ltr"
+                placeholder="vp_food_1"
+                value={kycVp}
+                onChange={(e) => setKycVp(e.target.value)}
+              />
+            </div>
+            <div className="radius-row">
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ width: 'auto', minHeight: 40 }}
+                onClick={async () => {
+                  const r = await apiFetch(`/admin/kyc/${kycVp}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ status: 'APPROVED', license: 'جواز-نمونه' }),
+                  });
+                  setMsg(r.ok ? `${kycVp} تایید KYC شد` : r.error || 'خطا');
+                }}
+              >
+                تایید مدارک
+              </button>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={async () => {
+                  const r = await apiFetch(`/admin/kyc/${kycVp}`, {
+                    method: 'POST',
+                    body: JSON.stringify({ status: 'REJECTED', reason: 'مدرک ناخوانا' }),
+                  });
+                  setMsg(r.ok ? `${kycVp} رد شد` : r.error || 'خطا');
+                }}
+              >
+                رد
+              </button>
+            </div>
+          </section>
 
           {overview && (
             <>

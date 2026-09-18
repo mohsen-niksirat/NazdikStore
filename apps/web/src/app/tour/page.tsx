@@ -57,6 +57,26 @@ const STEPS = [
     title: 'پیام‌ها',
     body: 'چت سفارش و اعلان‌ها.',
   },
+  {
+    href: '/search',
+    title: 'جستجوی فازی',
+    body: '«پیتزا» یا «پيتزا» — نتیجه یکی است + رتبه فاصله.',
+  },
+  {
+    href: '/track',
+    title: 'رهگیری پیک',
+    body: 'اختصاص پیک، GPS زنده، وضعیت تحویل.',
+  },
+  {
+    href: '/assistant',
+    title: 'دستیار هوشمند',
+    body: 'جمله فارسی بنویس؛ دسته و شعاع را حدس می‌زند.',
+  },
+  {
+    href: '/settings',
+    title: 'تنظیمات',
+    body: 'پوسته OLED، صرفه‌جویی اینترنت، کد دعوت.',
+  },
 ];
 
 export default function TourPage() {

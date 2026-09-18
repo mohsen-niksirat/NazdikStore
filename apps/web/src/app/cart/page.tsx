@@ -201,6 +201,26 @@ export default function CartPage() {
         if (!res.ok || !body.success) throw new Error(body.error?.message || 'order failed');
         last = body.data;
       }
+      // Atomic coupon redeem at checkout (single-use)
+      if (coupon.trim() && last) {
+        const r = await apiFetch<{ discount: number; freeDelivery?: boolean }>(
+          '/coupons/redeem',
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              code: coupon,
+              subtotalToman: last.totalToman,
+              orderId: last.id,
+            }),
+          },
+        );
+        if (r.ok && r.data) {
+          setDiscount(r.data.discount || 0);
+          setCouponMsg(`کد ${coupon.toUpperCase()} روی سفارش اعمال شد`);
+        } else {
+          setCouponMsg(r.error || r.data?.error || 'کد تخفیف اعمال نشد');
+        }
+      }
       setLastOrder(last);
       setMsg(`سفارش ثبت شد — ${fmt(last!.totalToman)} تومان`);
       persist([]);
@@ -209,7 +229,7 @@ export default function CartPage() {
     } finally {
       setBusy(false);
     }
-  }, [cart, address]);
+  }, [cart, address, coupon]);
 
   const payNow = useCallback(async () => {
     if (!lastOrder) return;

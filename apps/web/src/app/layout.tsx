@@ -4,6 +4,7 @@ import './globals.css';
 import { SWRegister } from './sw-register';
 import { NotificationBell } from '@/components/notification-bell';
 import { ApiStatusChip } from '@/components/api-status';
+import { ThemeBoot } from '@/components/theme-boot';
 
 export const metadata: Metadata = {
   title: 'نزدیک استور | NazdikStore',
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <ThemeBoot />
         <header
           style={{
             position: 'sticky',

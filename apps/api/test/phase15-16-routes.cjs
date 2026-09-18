@@ -138,6 +138,38 @@ function attachAssistantBiRoutes(ctx, match, json, readBody, authUser) {
     analyticsCache.set(cacheKey, { at: Date.now(), data });
     return json(res, 200, { success: true, data, cached: false, ttlMs: 60000 });
   });
+
+  // ── KYC verification queue (Phase 16 bureau) ──
+  if (!global.__nazdikKyc) global.__nazdikKyc = new Map();
+
+  match('POST', '/admin/kyc/:vendorProfileId', async (req, res, params) => {
+    const user = authUser(ctx, req);
+    if (!user || user.role !== 'ADMIN') {
+      return json(res, 403, { success: false, error: { code: 'FORBIDDEN' } });
+    }
+    const body = await readBody(req);
+    const rec = {
+      vendorProfileId: params.vendorProfileId,
+      status: body.status === 'REJECTED' ? 'REJECTED' : body.status === 'PENDING' ? 'PENDING' : 'APPROVED',
+      reason: body.reason ? String(body.reason).slice(0, 200) : null,
+      license: body.license ? String(body.license).slice(0, 80) : null,
+      nationalId: body.nationalId ? String(body.nationalId).slice(0, 20) : null,
+      updatedAt: new Date().toISOString(),
+    };
+    global.__nazdikKyc.set(params.vendorProfileId, rec);
+    return json(res, 200, { success: true, data: rec });
+  });
+
+  match('GET', '/admin/kyc', (req, res) => {
+    const user = authUser(ctx, req);
+    if (!user || user.role !== 'ADMIN') {
+      return json(res, 403, { success: false, error: { code: 'FORBIDDEN' } });
+    }
+    return json(res, 200, {
+      success: true,
+      data: Array.from(global.__nazdikKyc.values()),
+    });
+  });
 }
 
 module.exports = { attachAssistantBiRoutes, fraudFlags };
