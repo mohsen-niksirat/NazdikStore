@@ -11,3 +11,5 @@ export * from './search';
 export * from './loyalty';
 export * from './escrow';
 export * from './assistant';
+export * from './ux';
+export * from './chaos';
