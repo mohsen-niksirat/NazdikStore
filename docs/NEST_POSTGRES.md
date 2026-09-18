@@ -74,12 +74,28 @@ Disable offline mini path by running Nest on the same port.
 - [ ] Backup Postgres
 - [ ] CI green on main
 
-## Mapping: mini API → Nest routes
+## 8. If npm install hangs / registry blocked
 
-| Feature | Mini | Nest |
-|---|---|---|
-| OTP | `/auth/otp/*` | same |
-| Map | `/map/vendors` | same + PostGIS |
-| Orders | `/orders/*` | Prisma + state machine |
-| Payments | `/orders/:id/pay` | gateways + webhooks |
-| Admin | `/admin/overview` | implement on Nest admin module |
+Use a mirror then retry:
+
+```bash
+npm config set registry https://registry.npmjs.org
+# or
+npm config set registry https://registry.npmmirror.com
+npm install --workspaces=false
+```
+
+Offline fallback remains:
+
+```bash
+cd apps/api && npm run dev   # mini-server on :4000
+```
+
+## 9. Success criteria for real Nest
+
+- [ ] `GET /api/v1/health` from Nest (Swagger link logged)
+- [ ] OTP request works with Postgres user upsert
+- [ ] `/map/vendors` returns PostGIS rows
+- [ ] Payment webhook credits wallet once (idempotent)
+- [ ] `dev-login` returns 403 when `NODE_ENV=production`
+

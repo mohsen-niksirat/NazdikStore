@@ -2,31 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { apiFetch } from '@/lib/api';
+import { EmptyState } from '@/components/empty-state';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
-
-interface FeedItem {
+type FeedItem = {
   id: string;
   caption: string;
   createdAt: string;
   businessName: string;
   vendorProfileId: string;
   productTags?: Array<{ productId: string; title: string; priceToman: number }>;
-}
+};
 
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     (async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/v1/feed`);
-        const body = await res.json();
-        if (res.ok && body.success) setItems(body.data);
-        else setError('خوراک در دسترس نیست');
-      } catch {
-        setError('API روی پورت ۴۰۰۰ بالا نیست');
+      const r = await apiFetch<FeedItem[]>('/feed');
+      if (!r.ok) {
+        setOffline(Boolean(r.offline));
+        setError(r.error);
         setItems([
           {
             id: 'd1',
@@ -37,7 +35,9 @@ export default function FeedPage() {
             productTags: [{ productId: 'p1', title: 'قورمه', priceToman: 185000 }],
           },
         ]);
+        return;
       }
+      setItems(r.data || []);
     })();
   }, []);
 
@@ -53,7 +53,20 @@ export default function FeedPage() {
         </Link>
       </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && (
+        <div className="alert alert-error" role="status">
+          {error}
+        </div>
+      )}
+
+      {items.length === 0 && !error && (
+        <EmptyState
+          title="هنوز پستی نیست"
+          body="فروشنده‌ها می‌توانند از پنل خود پست بگذارند."
+          actionHref="/vendor"
+          actionLabel="پنل فروشنده"
+        />
+      )}
 
       <section>
         {items.map((item) => (
@@ -77,13 +90,13 @@ export default function FeedPage() {
             </time>
           </article>
         ))}
-        {!error && items.length === 0 && (
-          <div className="card body-muted">پستی هنوز منتشر نشده است.</div>
-        )}
       </section>
 
       <Link href="/map" className="btn-secondary">
         مشاهده نقشه
+      </Link>
+      <Link href="/tour" className="btn-secondary">
+        تور دمو
       </Link>
     </main>
   );

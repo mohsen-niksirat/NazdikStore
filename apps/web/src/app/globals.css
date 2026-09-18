@@ -32,6 +32,7 @@ html {
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -47,6 +48,63 @@ body {
 
 body.min-h-screen {
   min-height: 100vh;
+}
+
+/* ── Layout shell ── */
+.page {
+  width: min(100% - 32px, var(--max-app));
+  margin: 0 auto;
+  padding: 20px 0 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: calc(100vh - 55px);
+}
+
+.page-center {
+  justify-content: center;
+}
+
+code.mono {
+  font-family: var(--font-mono);
+  background: var(--paper-deep);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.card-hero {
+  background:
+    linear-gradient(145deg, rgba(15, 107, 92, 0.1), transparent 45%),
+    linear-gradient(320deg, rgba(196, 146, 42, 0.08), transparent 40%),
+    rgba(255, 255, 255, 0.92);
+}
+
+.list-card {
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.list-card:hover {
+  border-color: rgba(15, 107, 92, 0.25);
+}
+
+@media (max-width: 380px) {
+  .page {
+    width: min(100% - 16px, var(--max-app));
+  }
+
+  .brand-title {
+    font-size: 0.95rem !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* ── Layout shell ── */

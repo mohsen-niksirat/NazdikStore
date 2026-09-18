@@ -20,6 +20,13 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fa" dir="rtl">
+      <head>
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
+        />
+      </head>
       <body>
         <header
           style={{
@@ -59,6 +66,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </header>
+        <div
+          aria-hidden
+          style={{
+            height: 3,
+            background: 'linear-gradient(90deg, var(--accent), var(--gold), var(--accent))',
+          }}
+        />
         {children}
         <SWRegister />
       </body>

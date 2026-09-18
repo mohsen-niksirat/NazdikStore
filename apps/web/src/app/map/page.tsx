@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 import {
   DEFAULT_MAP_CENTER,
   RADIUS_PRESETS_KM,
@@ -100,21 +101,14 @@ export default function MapPage() {
       exact: '0',
     });
     if (vendorType) qs.set('vendorType', vendorType);
-    try {
-      const res = await fetch(`${API_URL}/api/v1/map/vendors?${qs.toString()}`);
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        setData(demoResponse(center, radiusKm));
-        setError('نمایش داده‌های نمونه (سرور در دسترس نیست)');
-        return;
-      }
-      setData(body.data as MapApiResponse);
-    } catch {
+    const r = await apiFetch<MapApiResponse>(`/map/vendors?${qs.toString()}`);
+    if (!r.ok || !r.data) {
       setData(demoResponse(center, radiusKm));
-      setError('نمایش داده‌های نمونه (سرور در دسترس نیست)');
-    } finally {
-      setLoading(false);
+      setError(r.offline ? 'API در دسترس نیست — نمایش داده نمونه' : 'نمایش داده‌های نمونه');
+    } else {
+      setData(r.data);
     }
+    setLoading(false);
   }, [center, radiusKm, vendorType, zoom]);
 
   useEffect(() => {
