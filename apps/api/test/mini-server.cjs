@@ -221,6 +221,12 @@ function main() {
   } catch (err) {
     console.warn('phase13-routes not attached:', (err && err.message) || err);
   }
+  try {
+    const { attachEscrowRoutes } = require('./phase14-routes.cjs');
+    attachEscrowRoutes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('phase14-routes not attached:', (err && err.message) || err);
+  }
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
