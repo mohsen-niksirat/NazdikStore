@@ -40,6 +40,13 @@ Open: `http://127.0.0.1:3300` (or the port printed by Next).
 | Cart / checkout | `/cart` |
 | Admin | `/admin` |
 | Chat & alerts | `/messages` |
+| Appointments / RFQ | `/book` |
+
+**Docker demo** (when Docker is installed):
+```bash
+docker compose -f docker-compose.demo.yml up --build
+# API :4000  Web :3300
+```
 
 **Demo logins** (no SMS): use the buttons on `/vendor`, `/cart`, `/admin`, `/messages` — they call `POST /api/v1/auth/dev-login`.
 

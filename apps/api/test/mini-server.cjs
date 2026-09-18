@@ -103,21 +103,20 @@ function load() {
     caption: 'قورمه سبزی امروز آماده است.',
     productTags: [{ productId: 'p1', title: 'قورمه', priceToman: 185000 }],
   });
-  feed.createProduct({
-    vendorProfileId: 'vp_food_1',
-    title: 'قورمه سبزی خانگی',
-    priceToman: 185000,
-    stock: 20,
-  });
-  reviews.grantEngagement('vp_food_1', 'demo_c1');
-  slots.setSchedule('vp_food_1', [
-    { weekday: new Date().getDay(), startMinute: 540, endMinute: 720, slotMinutes: 30, breaks: [] },
-  ]);
 
   // simple user store
   const users = new Map(); // phone -> user
+  const ctxObj = { shared, otp, tokens, map, feed, reviews, slots, orders, rfq, wallet, payments, notifications: notif, notif, users };
 
-  return { shared, otp, tokens, map, feed, reviews, slots, orders, rfq, wallet, payments, notifications: notif, notif, users };
+  try {
+    const { seedDemoExtras } = require('./seed-demo.cjs');
+    const extra = seedDemoExtras(ctxObj);
+    console.log('Demo seed extras ready', extra);
+  } catch (e) {
+    console.warn('seed-demo skipped:', e.message);
+  }
+
+  return ctxObj;
 }
 
 function json(res, status, body) {

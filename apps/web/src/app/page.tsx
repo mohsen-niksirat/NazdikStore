@@ -44,6 +44,9 @@ export default function HomePage() {
           <Link href="/messages" className="btn-secondary">
             پیام‌ها و اعلان‌ها
           </Link>
+          <Link href="/book" className="btn-secondary">
+            نوبت و درخواست خدمت
+          </Link>
         </div>
       </section>
 
