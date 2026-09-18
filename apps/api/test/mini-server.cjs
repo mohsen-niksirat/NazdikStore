@@ -203,6 +203,12 @@ function main() {
   } catch (err) {
     console.warn('phase8-routes not attached:', (err && err.message) || err);
   }
+  try {
+    const { attachTrackingRoutes } = require('./phase11-routes.cjs');
+    attachTrackingRoutes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('phase11-routes not attached:', (err && err.message) || err);
+  }
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
