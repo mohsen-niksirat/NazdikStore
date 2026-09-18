@@ -48,7 +48,8 @@ function load() {
   const { PaymentsService } = require(path.join(API_SRC, 'payments/payments.service.ts'));
   const { NotificationService } = require(path.join(API_SRC, 'notifications/notification.service.ts'));
   const { demoVendors } = require(path.join(API_SRC, 'seed/seed.service.ts'));
-  const { JwtService } = require(path.join(apiNM, '@nestjs/jwt'));
+  // Bare require — dep-paths resolves from apps/api/node_modules OR monorepo root
+  const { JwtService } = require('@nestjs/jwt');
   const { MockGateway } = require(path.join(API_SRC, 'payments/payment-gateway.ts'));
 
   const prismaStub = {

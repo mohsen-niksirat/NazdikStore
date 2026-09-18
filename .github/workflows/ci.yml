@@ -14,16 +14,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Pure smoke (no deps)
         run: node apps/api/test/ci-pure.cjs
 
-      - name: Install test deps into apps/api/node_modules
-        working-directory: apps/api
+      # Install at REPO ROOT — npm workspaces hoist packages here
+      - name: Install test deps (repo root, workspaces disabled)
         run: |
           set -eux
-          mkdir -p node_modules
           npm install \
             typescript \
             @nestjs/jwt \
@@ -43,21 +42,33 @@ jobs:
             validator \
             --no-package-lock \
             --no-save \
+            --workspaces=false \
             --registry https://registry.npmjs.org \
             --fetch-retries=5
-          node -e "console.log('ts', require('typescript').version)"
-          node test/ci-bootstrap.cjs
+
+      - name: Mirror deps into apps/api/node_modules
+        run: |
+          set -eux
+          mkdir -p apps/api/node_modules
+          # link/copy hoisted packages so absolute path requires also work
+          for p in typescript @nestjs @prisma class-validator class-transformer ioredis reflect-metadata rxjs helmet libphonenumber-js validator passport passport-jwt; do
+            if [ -e "node_modules/$p" ] && [ ! -e "apps/api/node_modules/$p" ]; then
+              cp -a "node_modules/$p" "apps/api/node_modules/$p" 2>/dev/null || true
+            fi
+          done
+          node -e "console.log('ts', require('typescript').version); console.log('jwt', require.resolve('@nestjs/jwt'))"
+          cd apps/api && node test/ci-bootstrap.cjs
 
       - name: Phase 1-5 unit + prod guards
         working-directory: apps/api
         run: |
           set -eux
-          node test/run-phase1.cjs 2>&1 | tee /tmp/p1.log
-          node test/run-phase2.cjs 2>&1 | tee /tmp/p2.log
-          node test/run-phase3.cjs 2>&1 | tee /tmp/p3.log
-          node test/run-phase4.cjs 2>&1 | tee /tmp/p4.log
-          node test/run-phase5.cjs 2>&1 | tee /tmp/p5.log
-          node test/run-prod-guards.cjs 2>&1 | tee /tmp/p6.log
+          node test/run-phase1.cjs
+          node test/run-phase2.cjs
+          node test/run-phase3.cjs
+          node test/run-phase4.cjs
+          node test/run-phase5.cjs
+          node test/run-prod-guards.cjs
 
       - name: Mini API smoke (phase 6-10)
         working-directory: apps/api
@@ -67,9 +78,9 @@ jobs:
           PORT: "4000"
         run: |
           set -eux
+          node -e "console.log('jwt resolve', require.resolve('@nestjs/jwt'))"
           node test/mini-server.cjs > /tmp/api.log 2>&1 &
           API_PID=$!
-          echo "API pid=$API_PID"
           UP=0
           for i in $(seq 1 20); do
             if curl -sf http://127.0.0.1:4000/api/v1/health; then
