@@ -215,8 +215,9 @@ function attachLoyaltyRoutes(ctx, match, json, readBody, authUser) {
     const user = authUser(ctx, req);
     if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
     const key = `${params.vendorProfileId}:${user.sub}`;
+    if (!global.__nazdikLoyalty) global.__nazdikLoyalty = new Map();
     const card =
-      loyalty.get(key) ||
+      global.__nazdikLoyalty.get(key) ||
       ({
         vendorProfileId: params.vendorProfileId,
         consumerId: user.sub,
@@ -224,7 +225,7 @@ function attachLoyaltyRoutes(ctx, match, json, readBody, authUser) {
         threshold: 5,
         rewardPercent: 50,
       });
-    loyalty.set(key, card);
+    global.__nazdikLoyalty.set(key, card);
     return json(res, 200, { success: true, data: { card, progress: shared.loyaltyProgress(card) } });
   });
 
@@ -232,7 +233,8 @@ function attachLoyaltyRoutes(ctx, match, json, readBody, authUser) {
     const user = authUser(ctx, req);
     if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
     const key = `${params.vendorProfileId}:${user.sub}`;
-    let card = loyalty.get(key) || {
+    if (!global.__nazdikLoyalty) global.__nazdikLoyalty = new Map();
+    let card = global.__nazdikLoyalty.get(key) || {
       vendorProfileId: params.vendorProfileId,
       consumerId: user.sub,
       stamps: 0,
@@ -240,7 +242,7 @@ function attachLoyaltyRoutes(ctx, match, json, readBody, authUser) {
       rewardPercent: 50,
     };
     card = shared.bumpLoyaltyStamp(card);
-    loyalty.set(key, card);
+    global.__nazdikLoyalty.set(key, card);
     return json(res, 200, { success: true, data: { card, progress: shared.loyaltyProgress(card) } });
   });
 
@@ -249,10 +251,11 @@ function attachLoyaltyRoutes(ctx, match, json, readBody, authUser) {
     if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
     const body = await readBody(req);
     const key = `${params.vendorProfileId}:${user.sub}`;
-    const card = loyalty.get(key);
+    if (!global.__nazdikLoyalty) global.__nazdikLoyalty = new Map();
+    const card = global.__nazdikLoyalty.get(key);
     if (!card) return json(res, 404, { success: false, error: { code: 'NOT_FOUND' } });
     const out = shared.applyLoyaltyDiscount(card, Number(body.subtotalToman) || 0);
-    loyalty.set(key, out.card);
+    global.__nazdikLoyalty.set(key, out.card);
     return json(res, 200, { success: true, data: out });
   });
 }

@@ -107,7 +107,7 @@ async function main() {
     const h = await req('GET', '/health');
     if (h.status !== 200) throw new Error('api down');
 
-    const orderId = 'ent_track_1';
+    const orderId = 'ent_track_' + Date.now().toString(36);
     let courierTok = null;
     let consumerTok = null;
     let outsiderTok = null;

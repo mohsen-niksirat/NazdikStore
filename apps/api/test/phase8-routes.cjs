@@ -53,6 +53,25 @@ function attachVendorOpsRoutes(ctx, match, json, readBody, authUser) {
         });
       }
       const data = ctx.orders.transition(params.orderId, next, { id: vp, role: 'VENDOR' });
+      // Loyalty punch: stamp when order completes (Phase 13 integration)
+      if (next === 'COMPLETED') {
+        try {
+          const sharedL = require('@nazdik/shared');
+          const key = `${order.vendorProfileId}:${order.consumerId}`;
+          const store = global.__nazdikLoyalty || (global.__nazdikLoyalty = new Map());
+          let card = store.get(key) || {
+            vendorProfileId: order.vendorProfileId,
+            consumerId: order.consumerId,
+            stamps: 0,
+            threshold: 5,
+            rewardPercent: 50,
+          };
+          card = sharedL.bumpLoyaltyStamp(card);
+          store.set(key, card);
+        } catch {
+          /* ignore */
+        }
+      }
       ctx.notifications?.notify?.({
         userId: order.consumerId,
         channel: 'websocket',

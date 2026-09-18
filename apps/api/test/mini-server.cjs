@@ -254,7 +254,22 @@ function main() {
       if (p === '/health' || p === '/api/health') {
         return json(res, 200, {
           success: true,
-          data: { status: 'ok', service: 'nazdik-api-mini', phase: '1-6', offline: true },
+          data: {
+            status: 'ok',
+            service: 'nazdik-api-mini',
+            phase: '1-18+ui',
+            offline: true,
+            features: [
+              'auth-otp',
+              'map-gis',
+              'jalali-chat',
+              'coupons-loyalty',
+              'escrow',
+              'assistant-bi',
+              'tracking',
+              'search',
+            ],
+          },
         });
       }
 
