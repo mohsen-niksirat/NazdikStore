@@ -8,3 +8,4 @@ export * from './jalali';
 export * from './vendor-ops';
 export * from './tracking';
 export * from './search';
+export * from './loyalty';
