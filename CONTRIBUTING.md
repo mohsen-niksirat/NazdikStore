@@ -2,15 +2,18 @@
 
 Thanks for reviewing — the repo is public on purpose.
 
+**Short path for friends:** open [`REVIEW_GUIDE.md`](REVIEW_GUIDE.md), run the 5-minute demo, then file an issue with **First-look checklist**.
+
 ## Quick review (no install)
 
 Read:
+- `REVIEW_GUIDE.md` — how to click through the product
 - `README.md` — run guide + demo logins
 - `ROADMAP.md` — phases 6–10
 - `DESIGN.md` — visual system
 - `Prompt 01.txt` — original brief
 
-Open an issue with **Review / feedback** or **Bug report** templates.
+Open an issue with **First-look**, **Review / feedback**, or **Bug report**.
 
 ## Local demo
 
