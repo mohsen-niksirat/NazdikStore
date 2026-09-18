@@ -39,6 +39,15 @@ function fmtDist(m: number | null) {
   return m < 1000 ? `${Math.round(m)} متر` : `${(m / 1000).toFixed(1)} کیلومتر`;
 }
 
+const CATS = [
+  { key: '', label: 'همه' },
+  { key: 'FOOD', label: 'غذا' },
+  { key: 'MEDICAL', label: 'پزشکی' },
+  { key: 'FIELD_SERVICE', label: 'خدمات' },
+  { key: 'BEAUTY', label: 'زیبایی' },
+  { key: 'ECOMMERCE', label: 'فروشگاهی' },
+];
+
 export default function SearchPage() {
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<Hit[]>([]);
@@ -47,6 +56,8 @@ export default function SearchPage() {
   const [tookMs, setTookMs] = useState<number | null>(null);
   const [normalized, setNormalized] = useState('');
   const [origin, setOrigin] = useState<{ lat: number; lng: number } | null>(null);
+  const [cat, setCat] = useState('');
+  const [openOnly, setOpenOnly] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -101,17 +112,13 @@ export default function SearchPage() {
     [runSearch],
   );
 
-  return (
-    <main className="page">
-      <div className="top-nav">
-        <div className="brand">
-          <h1 className="h1">جستجوی نزدیک</h1>
-          <p className="caption">فاز ۱۲ · فازی فارسی + رتبه‌بندی جغرافیایی</p>
-        </div>
-        <Link href="/" className="btn-ghost">
-          خانه
-        </Link>
-      </div>
+  const filteredHits = useMemo(() => {
+    return hits.filter((h) => {
+      if (cat && h.category && h.category !== cat) return false;
+      if (openOnly && h.isOpenBoost === false) return false;
+      return true;
+    });
+  }, [hits, cat, openOnly]);
 
       <section className="card stack-3">
         <div className="field">
@@ -193,10 +200,10 @@ export default function SearchPage() {
       </section>
 
       <section className="stack-3">
-        {hits.length === 0 && (
-          <div className="card body-muted">نتیجه‌ای نیست — عبارت دیگری امتحان کنید.</div>
+        {filteredHits.length === 0 && (
+          <div className="card body-muted">نتیجه‌ای نیست — عبارت یا فیلتر را عوض کنید.</div>
         )}
-        {hits.map((h) => (
+        {filteredHits.map((h) => (
           <div key={h.id} className="list-card stack-2">
             <div className="row-between">
               <div>
@@ -211,6 +218,9 @@ export default function SearchPage() {
               <span className="tag">متن {(h.textScore * 100).toFixed(0)}%</span>
               <span className="tag tag-line">{fmtDist(h.distanceMeters)}</span>
               {h.isOpenBoost && <span className="tag tag-gold">باز</span>}
+              <Link href={`/shop/${h.vendorProfileId || h.id}`} className="tag">
+                ویترین
+              </Link>
             </div>
           </div>
         ))}
