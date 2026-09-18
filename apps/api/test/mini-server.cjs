@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Module = require('module');
+const http = require('http');
 const { URL } = require('url');
 const { installResolveHook, installTsHook } = require('./dep-paths.cjs');
 
