@@ -65,6 +65,19 @@ export default function MapPage() {
   const [geoState, setGeoState] = useState<'idle' | 'loading' | 'ok' | 'denied'>('idle');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Vendor panel deep-link: /map?lat=&lng=&radiusKm=
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const q = new URLSearchParams(window.location.search);
+    const lat = Number(q.get('lat'));
+    const lng = Number(q.get('lng'));
+    const rk = Number(q.get('radiusKm'));
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      setCenter({ lat, lng });
+    }
+    if (Number.isFinite(rk) && rk > 0) setRadiusKm(rk);
+  }, []);
+
   const project = useCallback(
     (lat: number, lng: number, w: number, h: number) => {
       const latSpan = 0.04 * Math.pow(2, (13 - zoom) * 0.35);

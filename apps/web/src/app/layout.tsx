@@ -49,6 +49,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/map" className="btn-ghost" style={{ minHeight: 36 }}>
                 نقشه
               </Link>
+              <Link href="/profile" className="btn-ghost" style={{ minHeight: 36 }}>
+                پروفایل
+              </Link>
               <NotificationBell />
             </div>
           </div>

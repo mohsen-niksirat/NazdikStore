@@ -1,0 +1,33 @@
+name: Nest + Postgres
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/api/prisma/**'
+      - 'apps/api/src/**'
+      - 'docker-compose.yml'
+      - 'docs/NEST_POSTGRES.md'
+
+jobs:
+  compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate docker-compose demo file
+        run: |
+          test -f docker-compose.yml
+          test -f docker-compose.demo.yml
+          test -f docs/NEST_POSTGRES.md
+          test -f apps/api/Dockerfile
+          grep -q postgis docker-compose.yml
+          echo OK
+      - name: Validate Prisma migrations exist
+        run: |
+          test -f apps/api/prisma/schema.prisma
+          test -d apps/api/prisma/migrations/0_init
+          test -d apps/api/prisma/migrations/5_phase5_payments
+          echo MIGRATIONS_OK
+      # Full compose up requires Docker Hub + long runtime; optional:
+      # - run: docker compose -f docker-compose.demo.yml build

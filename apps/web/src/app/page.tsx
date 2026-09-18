@@ -53,6 +53,9 @@ export default function HomePage() {
           <Link href="/orders" className="btn-secondary">
             سفارش‌های من
           </Link>
+          <Link href="/profile" className="btn-secondary">
+            پروفایل من
+          </Link>
         </div>
       </section>
 

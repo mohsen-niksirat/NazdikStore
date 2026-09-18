@@ -419,6 +419,12 @@ export default function VendorDashboardPage() {
               <button type="button" className="btn-primary" disabled={busy} onClick={() => void saveLocation()}>
                 ذخیره موقعیت
               </button>
+              <Link href={`/map?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&radiusKm=5`} className="btn-secondary">
+                مشاهده روی نقشه نزدیک
+              </Link>
+              <p className="caption">
+                موقعیت عمومی روی نقشه مصرف‌کنندگان نمایش داده می‌شود؛ در حالت خانگی با مبهم‌سازی ۲۰۰ متری.
+              </p>
             </section>
           )}
         </>

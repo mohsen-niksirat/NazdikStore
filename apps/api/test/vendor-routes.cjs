@@ -334,6 +334,51 @@ function attachVendorRoutes(ctx, match, json, readBody, authUser) {
     const disputes = all.filter((o) => o.status === 'DISPUTED');
     return json(res, 200, { success: true, data: disputes });
   });
+
+  // ── User profile (v1.6) ──
+  match('GET', '/users/me', (req, res) => {
+    const user = authUser(ctx, req);
+    if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
+    const found =
+      ctx.users.get(user.phone) ||
+      Array.from(ctx.users.values()).find((u) => u.id === user.sub) || {
+        id: user.sub,
+        phone: user.phone || '—',
+        role: user.role,
+        firstName: null,
+        lastName: null,
+        isPhoneVerified: true,
+        createdAt: new Date().toISOString(),
+      };
+    return json(res, 200, { success: true, data: found });
+  });
+
+  match('PATCH', '/users/me', async (req, res) => {
+    const user = authUser(ctx, req);
+    if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
+    const body = await readBody(req);
+    const key =
+      user.phone ||
+      Array.from(ctx.users.entries()).find(([, u]) => u.id === user.sub)?.[0] ||
+      user.phone;
+    let record = ctx.users.get(key) || Array.from(ctx.users.values()).find((u) => u.id === user.sub);
+    if (!record) {
+      record = {
+        id: user.sub,
+        phone: user.phone || '—',
+        role: user.role,
+        firstName: null,
+        lastName: null,
+        isPhoneVerified: true,
+        createdAt: new Date().toISOString(),
+      };
+    }
+    if (typeof body.firstName === 'string') record.firstName = body.firstName.slice(0, 100);
+    if (typeof body.lastName === 'string') record.lastName = body.lastName.slice(0, 100);
+    if (typeof body.avatarUrl === 'string') record.avatarUrl = body.avatarUrl.slice(0, 500);
+    ctx.users.set(record.phone || key, record);
+    return json(res, 200, { success: true, data: record });
+  });
 }
 
 module.exports = { attachVendorRoutes };

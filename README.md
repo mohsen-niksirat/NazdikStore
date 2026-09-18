@@ -48,6 +48,8 @@ docker compose -f docker-compose.demo.yml up --build
 # API :4000  Web :3300
 ```
 
+**Nest + Postgres (v2 production):** see [`docs/NEST_POSTGRES.md`](docs/NEST_POSTGRES.md)
+
 **Demo logins** (no SMS): use the buttons on `/vendor`, `/cart`, `/admin`, `/messages` — they call `POST /api/v1/auth/dev-login`.
 
 OTP codes print in the API terminal as `[SMS] …`.
