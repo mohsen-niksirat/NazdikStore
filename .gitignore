@@ -20,3 +20,7 @@ install-bg.err
 *.err
 mini-server.log
 dev-server.log
+
+.nestpg/
+apps/api/nest-out.log
+apps/api/nest-err.log
