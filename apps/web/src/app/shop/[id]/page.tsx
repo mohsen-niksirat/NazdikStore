@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
+import { ShopGallery } from '@/components/shop-gallery';
 
 type Shop = {
   id: string;
@@ -97,6 +98,15 @@ export default function ShopPage() {
       {shop.address && (
         <section className="card caption">نشانی: {shop.address}</section>
       )}
+
+      <ShopGallery
+        title="گالری"
+        items={[
+          { id: 'g1', label: shop.businessName, hue: '#0d7a66' },
+          { id: 'g2', label: 'فضای کار', hue: '#c9972b' },
+          { id: 'g3', label: 'محصول ویژه', hue: '#3d5a80' },
+        ]}
+      />
 
       {shop.products.length > 0 && (
         <section className="stack-2">
