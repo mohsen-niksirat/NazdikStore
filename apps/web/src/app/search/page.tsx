@@ -221,6 +221,12 @@ export default function SearchPage() {
               <Link href={`/shop/${h.vendorProfileId || h.id}`} className="tag">
                 ویترین
               </Link>
+              <Link
+                href={`/map?lat=${origin?.lat ?? 35.6892}&lng=${origin?.lng ?? 51.389}&radiusKm=3&q=${encodeURIComponent(h.title)}`}
+                className="tag tag-line"
+              >
+                روی نقشه
+              </Link>
             </div>
           </div>
         ))}
