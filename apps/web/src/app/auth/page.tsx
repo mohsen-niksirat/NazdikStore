@@ -156,7 +156,24 @@ export default function AuthPage() {
       <section className="card card-hero" aria-live="polite">
         {successMsg ? (
           <div className="stack-4 center">
-            <h1 className="h1 text-accent">موفق</h1>
+            <div
+              aria-hidden
+              style={{
+                width: 56,
+                height: 56,
+                margin: '0 auto',
+                borderRadius: 16,
+                background: 'var(--accent-soft)',
+                color: 'var(--accent)',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 22,
+                fontWeight: 800,
+              }}
+            >
+              ✓
+            </div>
+            <h1 className="h1">موفق</h1>
             <p className="body-muted">{successMsg}</p>
             <Link href="/map" className="btn-primary">
               رفتن به نقشه

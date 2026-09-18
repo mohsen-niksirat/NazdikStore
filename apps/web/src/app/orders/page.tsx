@@ -178,16 +178,16 @@ export default function OrdersPage() {
         <div key={o.id} className="list-card stack-2">
           <div className="row-between">
             <div>
-              <strong className="text-sm">{o.kind}</strong>
-              <div className="caption mono" dir="ltr">
+              <div className="flex flex-wrap gap-2">
+                <span className="tag">{STATUS_FA[o.status] || o.status}</span>
+                <span className="tag tag-line">{o.kind}</span>
+              </div>
+              <div className="caption mono mt-1" dir="ltr">
                 {o.id.slice(0, 16)}…
               </div>
               <div className="caption">{o.vendorProfileId}</div>
             </div>
             <div className="price">{fmt(o.totalToman)}</div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <span className="tag">{STATUS_FA[o.status] || o.status}</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -222,11 +222,7 @@ export default function OrdersPage() {
               رسید
             </button>
             {o.status !== 'COMPLETED' && o.status !== 'CANCELLED' && o.status !== 'DISPUTED' && (
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => setDisputeFor(o.id)}
-              >
+              <button type="button" className="btn-ghost" onClick={() => setDisputeFor(o.id)}>
                 اختلاف
               </button>
             )}

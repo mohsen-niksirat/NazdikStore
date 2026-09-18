@@ -351,7 +351,7 @@ export default function MapPage() {
       </div>
 
       <section className="card stack-3">
-        <div className="radius-row">
+        <div className="radius-row" role="group" aria-label="شعاع">
           {RADIUS_PRESETS_KM.map((r) => (
             <button
               key={r}
@@ -381,18 +381,12 @@ export default function MapPage() {
           <button
             type="button"
             className="btn-secondary"
-            style={{ width: 'auto', minWidth: 110, flexShrink: 0 }}
+            style={{ width: 'auto', minWidth: 104, flexShrink: 0 }}
             onClick={locateMe}
             disabled={locateState === 'loading'}
           >
-            {locateState === 'loading' ? (
-              <Loader2 style={{ width: 14, height: 14 }} aria-hidden />
-            ) : (
-              <>
-                <Navigation style={{ width: 14, height: 14 }} aria-hidden />
-                موقعیت من
-              </>
-            )}
+            <Navigation style={{ width: 14, height: 14 }} aria-hidden />
+            {locateState === 'loading' ? '…' : 'موقعیت من'}
           </button>
         </div>
 
@@ -460,13 +454,22 @@ export default function MapPage() {
                   className="vendor-item"
                   onClick={() => setSelected(v)}
                 >
-                  <strong>{v.businessName}</strong>
+                  <div className="row-between">
+                    <strong>{v.businessName}</strong>
+                    <span className="price text-sm">{eta.dist}</span>
+                  </div>
                   <div className="vendor-meta">
-                    <span className="tag" style={{ background: PIN[v.vendorType]?.color, color: '#fff' }}>
+                    <span
+                      className="tag"
+                      style={{
+                        background: PIN[v.vendorType]?.color,
+                        color: '#fff',
+                      }}
+                    >
                       {PIN[v.vendorType]?.glyph} {PIN[v.vendorType]?.label ?? v.vendorType}
                     </span>
                     {v.isHomeBased && <span className="tag tag-gold">خانگی · مبهم</span>}
-                    <span>{eta.dist}</span>
+                    <span>{eta.walk}</span>
                   </div>
                 </button>
               );
