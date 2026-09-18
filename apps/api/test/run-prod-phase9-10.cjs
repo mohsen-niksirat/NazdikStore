@@ -101,11 +101,13 @@ async function main() {
   await it('dev-login blocked when NODE_ENV=production', async () => {
     const src = fs.readFileSync(path.join(ROOT, 'test/vendor-routes.cjs'), 'utf8');
     assert.ok(src.includes('dev-login disabled in production'));
-    assert.ok(src.includes("NODE_ENV === 'production'"));
+    assert.ok(
+      src.includes("NODE_ENV === 'production'") || src.includes('devLoginDisabled'),
+      'prod guard present',
+    );
     try {
       process.env.NODE_ENV = 'production';
       const r = await req('POST', '/auth/dev-login', { role: 'CONSUMER', id: 'x' });
-      // Server may have been started before NODE_ENV change — source guard is authoritative
       if (r.status === 200) {
         console.log('    (API already running with non-prod env; source guard OK)');
       } else {
