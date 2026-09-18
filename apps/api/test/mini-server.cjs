@@ -209,6 +209,12 @@ function main() {
   } catch (err) {
     console.warn('phase11-routes not attached:', (err && err.message) || err);
   }
+  try {
+    const { attachSearchRoutes } = require('./phase12-routes.cjs');
+    attachSearchRoutes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('phase12-routes not attached:', (err && err.message) || err);
+  }
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
