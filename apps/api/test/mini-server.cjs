@@ -157,6 +157,12 @@ function authUser(ctx, req) {
 }
 
 function main() {
+  process.on('uncaughtException', (err) => {
+    console.error('uncaughtException (kept alive):', err.message);
+  });
+  process.on('unhandledRejection', (err) => {
+    console.error('unhandledRejection (kept alive):', err && err.message);
+  });
   const ctx = load();
   const rawPort = Number(process.env.PORT);
   const port = Number.isFinite(rawPort) && rawPort > 0 && rawPort < 65536 ? rawPort : 4000;
@@ -202,6 +208,18 @@ function main() {
     attachVendorOpsRoutes(ctx, match, json, readBody, authUser);
   } catch (err) {
     console.warn('phase8-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachP19Routes } = require('./p19-routes.cjs');
+    attachP19Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p19-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachP20Routes } = require('./p20-routes.cjs');
+    attachP20Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p20-routes not attached:', (err && err.message) || err);
   }
   try {
     const { attachTrackingRoutes } = require('./phase11-routes.cjs');

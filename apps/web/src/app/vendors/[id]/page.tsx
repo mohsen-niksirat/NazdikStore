@@ -42,11 +42,18 @@ function toman(n: number): string {
   return `${n.toLocaleString('fa-IR')} تومان`;
 }
 
+type Trust = {
+  isOpenNow: boolean;
+  reviews: { count: number; average: number };
+  privacy: { fa: string } | null;
+};
+
 export default function VendorProfilePage() {
   const params = useParams<{ id: string }>();
   const id = params?.id ?? 'vp_food_1';
   const [profile, setProfile] = useState<VendorProfile | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [trust, setTrust] = useState<Trust | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<'posts' | 'products' | 'reviews'>('posts');
 
@@ -54,16 +61,19 @@ export default function VendorProfilePage() {
     let cancelled = false;
     (async () => {
       try {
-        const [pRes, rRes] = await Promise.all([
+        const [pRes, rRes, tRes] = await Promise.all([
           fetch(`${API_URL}/api/v1/vendors/${id}/profile`),
           fetch(`${API_URL}/api/v1/vendors/${id}/reviews`),
+          fetch(`${API_URL}/api/v1/vendors/${id}/trust`),
         ]);
         const pBody = await pRes.json();
         const rBody = await rRes.json();
+        const tBody = await tRes.json();
         if (cancelled) return;
         if (pRes.ok && pBody.success) {
           setProfile(pBody.data);
           setReviews(rBody.success ? rBody.data : []);
+          if (tRes.ok && tBody.success) setTrust(tBody.data);
         } else setError(pBody.error?.message ?? 'پروفایل یافت نشد');
       } catch {
         if (!cancelled) {
@@ -105,12 +115,24 @@ export default function VendorProfilePage() {
               </span>
             )}
             {profile.isHomeBased && <span className="tag tag-gold">خانگی</span>}
+            <span className={`tag${trust?.isOpenNow === false ? ' tag-line' : ''}`}>
+              {trust ? (trust.isOpenNow ? 'باز' : 'بسته') : ''}
+            </span>
           </div>
         </div>
         <Link href="/map" className="btn-ghost">
           نقشه
         </Link>
       </div>
+
+      {trust?.privacy && (
+        <div className="alert alert-muted">{trust.privacy.fa}</div>
+      )}
+      {trust && trust.reviews.count > 0 && (
+        <div className="caption">
+          امتیاز {trust.reviews.average} از {trust.reviews.count} نظر تاییدشده
+        </div>
+      )}
 
       <section className="card card-hero stack-3">
         {profile.description && <p className="body-muted">{profile.description}</p>}
