@@ -1,0 +1,19 @@
+{
+  "name": "نزدیک استور",
+  "short_name": "نزدیک",
+  "description": "بازارچه محلی چندفروشنده — فروشگاه‌ها و خدمات نزدیک شما",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F4EF",
+  "theme_color": "#0F6B5C",
+  "dir": "rtl",
+  "lang": "fa",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

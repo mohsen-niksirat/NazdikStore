@@ -2,6 +2,80 @@
 
 Hyperlocal multi-vendor marketplace for the Iranian market.
 
+**Public repo** — friends can review, clone, and comment:  
+https://github.com/mohsen-niksirat/NazdikStore
+
+## Release map
+
+| Version | What |
+|---|---|
+| Phase 1–5 | Auth, map, feed/reviews, transactions, payments |
+| **v0.6.0** | Vendor dashboard + CSS design system |
+| **v0.7.0** | Consumer cart & checkout |
+| **v0.8.0** | Admin console |
+| **v0.9.0** | Order chat + notifications |
+| **v1.0.0** | PWA install, release checklist |
+
+## How to run (local demo)
+
+```bat
+:: Terminal 1 — API (port 4000)
+cd apps\api
+npm run dev
+
+:: Terminal 2 — Web (port 3300 or 5000; 3000 reserved on some Windows)
+cd apps\web
+npm run dev
+```
+
+Open: `http://127.0.0.1:3300` (or the port printed by Next).
+
+| Page | Path |
+|---|---|
+| Home | `/` |
+| Map | `/map` |
+| Auth OTP | `/auth` |
+| Feed | `/feed` |
+| Vendor panel | `/vendor` |
+| Cart / checkout | `/cart` |
+| Admin | `/admin` |
+| Chat & alerts | `/messages` |
+
+**Demo logins** (no SMS): use the buttons on `/vendor`, `/cart`, `/admin`, `/messages` — they call `POST /api/v1/auth/dev-login`.
+
+OTP codes print in the API terminal as `[SMS] …`.
+
+## Production checklist
+
+- [ ] `docker compose up -d postgres redis`
+- [ ] `cd apps/api && npx prisma migrate deploy && npx prisma generate`
+- [ ] Set `JWT_ACCESS_SECRET`, `PAYMENT_HMAC_SECRET`, `PAYMENT_PROVIDER`, `CORS_ORIGINS`
+- [ ] Replace `SMS_PROVIDER=console` with Kavenegar / SMS.ir
+- [ ] Real Zarinpal/Saman credentials
+- [ ] HTTPS + reverse proxy (CSP already in `main.ts`)
+- [ ] Full Nest path: `npm run dev:nest` after complete `npm install`
+- [ ] Disable `dev-login` and mini-server in production
+
+## Tests
+
+```bash
+node apps/api/test/run-phase1.cjs
+node apps/api/test/run-phase2.cjs
+node apps/api/test/run-phase3.cjs
+node apps/api/test/run-phase4.cjs
+node apps/api/test/run-phase5.cjs
+# API must be running:
+node apps/api/test/run-phase6.cjs
+node apps/api/test/run-phase9.cjs
+```
+
+## Stack
+
+NestJS + Prisma + PostgreSQL/PostGIS · Next.js · Redis OTP/JWT · payment gateways (Zarinpal/Saman/mock) · Map engine with fuzzy home locations.
+
+See `ROADMAP.md` and `DESIGN.md` and `Prompt 01.txt` (original brief).
+
+
 ## Stack
 
 | Layer | Tech |

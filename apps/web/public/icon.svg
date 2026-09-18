@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="NazdikStore">
+  <rect width="128" height="128" rx="28" fill="#0F6B5C"/>
+  <circle cx="64" cy="52" r="18" fill="none" stroke="#F7F4EF" stroke-width="8"/>
+  <circle cx="64" cy="52" r="6" fill="#C4922A"/>
+  <path d="M40 96c8-16 40-16 48 0" fill="none" stroke="#F7F4EF" stroke-width="8" stroke-linecap="round"/>
+</svg>

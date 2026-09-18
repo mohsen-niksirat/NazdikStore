@@ -6,11 +6,11 @@ This document defines the **post-brief product roadmap** — what we ship next t
 
 | Phase | Version | Theme | Outcome |
 |---|---|---|---|
-| 6 | `v0.6.0` | Vendor dashboard | Vendors manage profile, products, posts, and order status from the UI |
-| 7 | `v0.7.0` | Consumer commerce | Cart, appointment booking, checkout & payment UI |
-| 8 | `v0.8.0` | Admin console | Verification, platform wallet, dispute queue |
-| 9 | `v0.9.0` | Realtime chat & alerts | Order chat + notification center |
-| 10 | `v1.0.0` | PWA + production hardening | Installable app, seed demo, release checklist |
+| 6 | `v0.6.0` | Vendor dashboard | ✅ shipped |
+| 7 | `v0.7.0` | Consumer commerce | ✅ shipped |
+| 8 | `v0.8.0` | Admin console | ✅ shipped |
+| 9 | `v0.9.0` | Realtime chat & alerts | ✅ shipped |
+| 10 | `v1.0.0` | PWA + production hardening | ✅ shipped |
 
 Each phase: implement → test → `git tag vX.Y.Z` → push to GitHub.
 
