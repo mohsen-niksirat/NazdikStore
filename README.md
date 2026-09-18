@@ -25,24 +25,22 @@ Issue template: **First-look checklist**
 
 | Phase | Status | Focus |
 |---|---|---|
-| **6** GIS map UX | ✅ | Category pins, ETA «متر فاصله»/پیاده/خودرو، Locate Me (bounds ایران)، منطقه هشدار ۱٫۵km، دایره خط‌چین حریم خصوصی، tile presets (OSM/Neshan/ParsiMap/custom) |
-| 7 | pending | Jalali schedule + WebSocket chat |
+| **6** GIS map UX | ✅ | Category pins, ETA, Locate Me, 1.5km alerts, fuzzy rings |
+| **7** Jalali + chat | ✅ | شمسی booking, Asia/Tehran, buffer, order-isolated chat SENT/DELIVERED/READ |
 | 8 | pending | Vendor kanban + Sheba ledger |
 | 9 | pending | PWA performance |
 | 10 | pending | Security + production Docker |
 
-Phase 6 tests: `node apps/api/test/run-prod-phase6.cjs`
+Phase 7 tests: `node apps/api/test/run-prod-phase7.cjs`
 
-Map UI: `/map` — pin categories, ETA card, «موقعیت من»، «هشدار فروشنده جدید در ۱٫۵ کیلومتر»
+API (Phase 7):
+- `POST /api/v1/vendors/me/schedule-jalali`
+- `GET /api/v1/vendors/:id/slots-jalali?day=YYYY-MM-DD`
+- `POST /api/v1/orders/appointments-jalali`
+- `GET/POST /api/v1/chat/:orderId/messages`
+- `POST /api/v1/chat/:orderId/messages/:msgId/read`
 
-API (Phase 6):
-- `GET /api/v1/gis/tiles`
-- `POST /api/v1/gis/locate`
-- `POST /api/v1/gis/proximity`
-- `POST /api/v1/alert-zones`
-- `GET /api/v1/alert-zones/:id/nearby`
-
-Shared: `packages/shared/src/gis.ts`
+Shared: `packages/shared/src/jalali.ts`
 
 ## How to run (local demo)
 

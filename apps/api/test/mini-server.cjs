@@ -190,6 +190,12 @@ function main() {
   } catch (err) {
     console.warn('gis-routes not attached:', (err && err.message) || err);
   }
+  try {
+    const { attachPhase7Routes } = require('./phase7-routes.cjs');
+    attachPhase7Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('phase7-routes not attached:', (err && err.message) || err);
+  }
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);

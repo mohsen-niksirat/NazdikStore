@@ -1,25 +1,23 @@
 'use client';
 
 /**
- * Phase 12 — Appointment booking UI (demo clinic) + RFQ job request.
+ * Production Phase 7 — Jalali appointment booking + RFQ.
  */
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Calendar, Wrench } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
 const TOKEN_KEY = 'nazdik_token';
 const USER_KEY = 'nazdik_user';
 
-type Slot = {
-  id: string;
-  day: string;
+type JalaliSlot = {
   startMinute: number;
   endMinute: number;
-  isBooked: boolean;
-  startLabel?: string;
-  endLabel?: string;
+  faTime: string;
+  available: boolean;
+  jalaliLabel?: string;
 };
 
 function minLabel(m: number) {
@@ -33,15 +31,13 @@ async function ensureConsumer() {
   const raw = localStorage.getItem(USER_KEY);
   let user = raw ? JSON.parse(raw) : null;
   if (!token || (user && user.role !== 'CONSUMER' && user.role !== 'VENDOR')) {
-    const res = await fetch(`${API}/api/v1/auth/dev-login`, {
+    const r = await apiFetch<{ tokens: { accessToken: string }; user: unknown }>('/auth/dev-login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: 'CONSUMER', id: 'consumer_demo' }),
     });
-    const body = await res.json();
-    if (!body.success) throw new Error('login failed');
-    token = body.data.tokens.accessToken;
-    user = body.data.user;
+    if (!r.ok || !r.data) throw new Error(r.error || 'login failed');
+    token = r.data.tokens.accessToken;
+    user = r.data.user;
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
@@ -50,8 +46,12 @@ async function ensureConsumer() {
 
 export default function BookPage() {
   const [tab, setTab] = useState<'slot' | 'rfq'>('slot');
-  const [day, setDay] = useState(new Date().toISOString().slice(0, 10));
-  const [slots, setSlots] = useState<Slot[]>([]);
+  const [day, setDay] = useState(() => {
+    // default: Tehran-ish today (browser local ok for demo)
+    return new Date().toISOString().slice(0, 10);
+  });
+  const [jalaliLabel, setJalaliLabel] = useState('');
+  const [slots, setSlots] = useState<JalaliSlot[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -61,80 +61,69 @@ export default function BookPage() {
 
   const loadSlots = useCallback(async () => {
     setErr(null);
-    try {
-      const res = await fetch(`${API}/api/v1/vendors/vp_clinic_demo/slots?day=${day}`);
-      const body = await res.json();
-      if (!body.success) {
+    const r = await apiFetch<{ day: string; jalaliLabel: string; slots: JalaliSlot[] }>(
+      `/vendors/vp_clinic_demo/slots-jalali?day=${day}`,
+    );
+    if (!r.ok || !r.data) {
+      // fallback legacy slots
+      const legacy = await apiFetch<{ slots: Array<{ startMinute: number; endMinute: number; isBooked: boolean; id: string }> }>(
+        `/vendors/vp_clinic_demo/slots?day=${day}`,
+      );
+      if (legacy.ok && legacy.data) {
+        setSlots(
+          (legacy.data.slots || []).map((s) => ({
+            startMinute: s.startMinute,
+            endMinute: s.endMinute,
+            faTime: minLabel(s.startMinute),
+            available: !s.isBooked,
+          })),
+        );
+        setJalaliLabel(legacy.ok ? '' : '');
+      } else {
         setSlots([]);
-        setErr('نوبتی یافت نشد — API را ری‌استارت کنید');
-        return;
+        setErr(r.error || 'نوبتی یافت نشد');
       }
-      setSlots(body.data.slots || []);
-    } catch {
-      setErr('API در دسترس نیست (:4000)');
+      return;
     }
+    setJalaliLabel(r.data.jalaliLabel || '');
+    setSlots(r.data.slots || []);
   }, [day]);
 
   useEffect(() => {
     void loadSlots();
   }, [loadSlots]);
 
-  async function book(slot: Slot) {
+  async function book(slot: JalaliSlot) {
     setBusy(true);
     setErr(null);
     setMsg(null);
     try {
       const token = await ensureConsumer();
-      const res = await fetch(`${API}/api/v1/orders/appointments`, {
+      const r = await apiFetch<{
+        orderId: string;
+        faTime: string;
+        jalaliLabel: string;
+        bufferMinutes: number;
+      }>('/orders/appointments-jalali', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           vendorProfileId: 'vp_clinic_demo',
-          slotId: slot.id,
+          day,
+          startMinute: slot.startMinute,
+          endMinute: slot.endMinute,
           priceToman: 400000,
-          note: 'نوبت دمو',
         }),
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        setErr(body.error?.message || `رزرو ناموفق (${body.error?.details?.reason || body.error?.code || 'error'})`);
+      if (!r.ok || !r.data) {
+        setErr(r.error || 'رزرو ناموفق — ساعت ممکن است پر باشد');
         return;
       }
-      setLastOrder(body.data.id);
-      setMsg(`نوبت ${minLabel(slot.startMinute)} رزرو شد — سفارش ${body.data.id.slice(0, 10)}…`);
-      void loadSlots();
-    } catch (e) {
-      setErr((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function payLast() {
-    if (!lastOrder) return;
-    setBusy(true);
-    try {
-      const token = localStorage.getItem(TOKEN_KEY);
-      const res = await fetch(`${API}/api/v1/orders/${lastOrder}/pay`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-          'Idempotency-Key': `pay_${lastOrder}_1`,
-        },
-      });
-      const body = await res.json();
-      if (!body.success) {
-        setErr(body.error?.message || 'پرداخت ناموفق');
-        return;
-      }
-      const sim = await fetch(`${API}/api/v1/payments/simulate/${body.data.id}`, { method: 'POST' });
-      const simBody = await sim.json();
+      setLastOrder(r.data.orderId);
       setMsg(
-        simBody.success
-          ? `پرداخت نوبت موفق — سهم فروشنده ${simBody.data.vendorCredit.toLocaleString('fa-IR')} تومان`
-          : 'پرداخت ایجاد شد',
+        `نوبت ${r.data.jalaliLabel} ساعت ${r.data.faTime} رزرو شد (بافر ${r.data.bufferMinutes} دقیقه).`,
       );
+      void loadSlots();
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -148,9 +137,8 @@ export default function BookPage() {
     setMsg(null);
     try {
       const token = await ensureConsumer();
-      const res = await fetch(`${API}/api/v1/jobs`, {
+      const r = await apiFetch<{ job?: { id: string }; id?: string }>('/jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           title: jobTitle,
           description: jobDesc,
@@ -158,17 +146,15 @@ export default function BookPage() {
           lng: 51.389,
           radiusKm: 8,
         }),
+        headers: { Authorization: `Bearer ${token}` },
       });
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        setErr(body.error?.message || 'ثبت درخواست ناموفق');
+      if (!r.ok || !r.data) {
+        setErr(r.error || 'ثبت درخواست ناموفق');
         return;
       }
-      const jobId = body.data.job?.id || body.data.id;
+      const jobId = r.data.job?.id || r.data.id;
       if (jobId) sessionStorage.setItem('nazdik_job_id', jobId);
-      setMsg(
-        `درخواست «${jobTitle}» ثبت شد.\nشناسه: ${jobId}\nبه فروشندگان خدمات میدانی نزدیک اطلاع داده شد.`,
-      );
+      setMsg(`درخواست «${jobTitle}» ثبت شد.\nشناسه: ${jobId}`);
     } catch (e) {
       setErr((e as Error).message);
     } finally {
@@ -180,8 +166,8 @@ export default function BookPage() {
     <main className="page">
       <div className="top-nav">
         <div className="brand">
-          <h1 className="h1">نوبت و درخواست خدمت</h1>
-          <p className="caption">فاز ۱۲ · رزرو نوبت + RFQ</p>
+          <h1 className="h1">نوبت شمسی</h1>
+          <p className="caption">فاز ۷ · تقویم جلالی · Asia/Tehran · بافر نوبت</p>
         </div>
         <Link href="/" className="btn-ghost">
           خانه
@@ -207,37 +193,41 @@ export default function BookPage() {
       {tab === 'slot' ? (
         <section className="card stack-3">
           <h2 className="h2">مطب دکتر رضایی</h2>
+          {jalaliLabel && (
+            <div className="alert alert-muted">
+              <strong>{jalaliLabel}</strong>
+              <div className="caption">منطقه زمانی: Asia/Tehran</div>
+            </div>
+          )}
           <div className="field">
-            <label>تاریخ</label>
+            <label>تاریخ (میلادی مرجع)</label>
             <input className="input-field" dir="ltr" type="date" value={day} onChange={(e) => setDay(e.target.value)} />
           </div>
           <div className="radius-row">
-            {slots.filter((s) => !s.isBooked).length === 0 && (
-              <p className="body-muted">ساعت خالی برای این روز نیست.</p>
+            {slots.filter((s) => s.available).length === 0 && (
+              <p className="body-muted">ساعت خالی نیست (ممکن است بافر/تعارض اعمال شده باشد).</p>
             )}
-            {slots.map((s) => (
+            {slots.map((s, i) => (
               <button
-                key={s.id}
+                key={`${s.startMinute}-${i}`}
                 type="button"
-                className={`pill${s.isBooked ? '' : ' active'}`}
-                disabled={s.isBooked || busy}
-                style={s.isBooked ? { opacity: 0.45 } : undefined}
+                className={`pill${s.available ? ' active' : ''}`}
+                disabled={!s.available || busy}
+                style={s.available ? undefined : { opacity: 0.45 }}
                 onClick={() => void book(s)}
               >
-                {minLabel(s.startMinute)}
-                {s.isBooked ? ' · پر' : ''}
+                {s.faTime || minLabel(s.startMinute)}
+                {s.available ? '' : ' · پر'}
               </button>
             ))}
           </div>
-          {lastOrder && (
-            <button type="button" className="btn-primary" disabled={busy} onClick={() => void payLast()}>
-              پرداخت نوبت (۴۰۰٬۰۰۰ تومان)
-            </button>
-          )}
+          <Link href={`/messages${lastOrder ? `?order=${lastOrder}` : ''}`} className="btn-secondary">
+            چت نوبت / سفارش
+          </Link>
         </section>
       ) : (
         <section className="card stack-3">
-          <h2 className="h2">درخواست خدمت (مزایده معکوس)</h2>
+          <h2 className="h2">درخواست خدمت (RFQ)</h2>
           <div className="field">
             <label>عنوان</label>
             <input className="input-field" value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} />
@@ -254,15 +244,11 @@ export default function BookPage() {
           <button type="button" className="btn-primary" disabled={busy || !jobTitle.trim()} onClick={() => void submitRfq()}>
             ارسال به فروشندگان نزدیک
           </button>
-          <p className="caption">درخواست برای خدمات میدانی در شعاع ۸ کیلومتری ارسال می‌شود.</p>
         </section>
       )}
 
       <Link href="/rfq" className="btn-secondary">
-        مشاهده پیشنهادهای خدمت
-      </Link>
-      <Link href="/map" className="btn-secondary">
-        نقشه نزدیک
+        پیشنهادهای خدمت
       </Link>
     </main>
   );
