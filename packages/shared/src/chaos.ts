@@ -35,28 +35,43 @@ export class SmsCircuitBreaker {
     const now = Date.now();
     let switched = false;
     let lastErr = null;
-    for (let i = 0; i < this.providers.length; i++) {
-      const p = this.providers[i];
-      if (this.isOpen(p.name, now)) {
-        switched = true;
-        continue;
+    // Try primary until circuit opens (threshold failures), then move on
+    const primary = this.providers[0];
+    if (primary && !this.isOpen(primary.name, now)) {
+      for (let attempt = 0; attempt < this.threshold; attempt++) {
+        try {
+          await primary.send(to, text);
+          const h = this.health.get(primary.name);
+          h.failures = 0;
+          h.openUntil = 0;
+          return { provider: primary.name, switched: false };
+        } catch (e) {
+          lastErr = e;
+          const h = this.health.get(primary.name);
+          h.failures += 1;
+          if (h.failures >= this.threshold) {
+            h.openUntil = now + this.cooldownMs;
+            switched = true;
+          }
+        }
       }
-      // Using a non-first provider means we switched away from primary
-      if (i > 0) switched = true;
+      switched = true;
+    } else if (primary) {
+      switched = true;
+    }
+
+    for (let i = 1; i < this.providers.length; i++) {
+      const p = this.providers[i];
+      if (this.isOpen(p.name, now)) continue;
       try {
         await p.send(to, text);
-        const h = this.health.get(p.name);
-        h.failures = 0;
-        h.openUntil = 0;
-        return { provider: p.name, switched };
+        return { provider: p.name, switched: true };
       } catch (e) {
         lastErr = e;
-        const h = this.health.get(p.name);
-        h.failures += 1;
-        if (h.failures >= this.threshold) {
-          h.openUntil = now + this.cooldownMs;
-        }
-        switched = true;
+        const h = this.health.get(p.name) || { failures: 0, openUntil: 0 };
+        h.failures = (h.failures || 0) + 1;
+        if (h.failures >= this.threshold) h.openUntil = now + this.cooldownMs;
+        this.health.set(p.name, h);
       }
     }
     throw lastErr || new Error('ALL_SMS_PROVIDERS_DOWN');
