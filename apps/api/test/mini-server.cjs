@@ -1,16 +1,8 @@
-/**
- * NazdikStore mini local API — Node http only (no Express/Nest required).
- * Uses the same in-memory engines as the Phase 1–5 test suites.
- *
- * From apps/api:  npm run start:local
- * From repo root: npm run api:local
- */
-const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const Module = require('module');
-const ts = require('typescript');
 const { URL } = require('url');
+const { installResolveHook, installTsHook } = require('./dep-paths.cjs');
 
 const ROOT = path.resolve(__dirname, '..');
 const SHARED_SRC = path.join(ROOT, '..', '..', 'packages', 'shared', 'src');
@@ -24,54 +16,19 @@ if (fs.existsSync(envPath)) {
     const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
     if (m && process.env[m[1]] === undefined) {
       let v = m[2].trim();
-      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-        v = v.slice(1, -1);
-      }
+      if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
       process.env[m[1]] = v;
     }
   }
 }
 process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'dev_access_change_me';
-// Mini server always uses in-memory Redis (no local redis required)
 process.env.REDIS_URL = '';
 process.env.PAYMENT_PROVIDER = process.env.PAYMENT_PROVIDER || 'mock';
 process.env.PLATFORM_COMMISSION_BPS = process.env.PLATFORM_COMMISSION_BPS || '1000';
+process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://127.0.0.1:3000,http://127.0.0.1:3300,http://127.0.0.1:5000';
 
-const compileTs = (p) =>
-  ts.transpileModule(fs.readFileSync(p, 'utf8'), {
-    compilerOptions: {
-      module: ts.ModuleKind.CommonJS,
-      target: ts.ScriptTarget.ES2022,
-      esModuleInterop: true,
-      experimentalDecorators: true,
-      emitDecoratorMetadata: true,
-    },
-    fileName: p,
-  }).outputText;
-
-Module._extensions['.ts'] = (mod, filename) => mod._compile(compileTs(filename), filename);
-
-const origResolve = Module._resolveFilename;
-Module._resolveFilename = function (request, parent, ...rest) {
-  if (request === '@nazdik/shared') return path.join(SHARED_SRC, 'index.ts');
-  try {
-    return origResolve.call(this, request, parent, ...rest);
-  } catch (err) {
-    for (const base of [apiNM, rootNM]) {
-      const c = path.join(base, request);
-      if (fs.existsSync(c) || fs.existsSync(c + '.js') || fs.existsSync(c + '.ts')) {
-        return origResolve.call(this, c, parent, ...rest);
-      }
-    }
-    throw err;
-  }
-};
-const origPaths = Module._nodeModulePaths;
-Module._nodeModulePaths = function (from) {
-  const p = origPaths.call(this, from);
-  p.unshift(apiNM, rootNM);
-  return p;
-};
+installResolveHook({ root: ROOT, sharedSrc: SHARED_SRC, apiSrc: API_SRC });
+installTsHook();
 
 function load() {
   const shared = require(path.join(SHARED_SRC, 'index.ts'));
