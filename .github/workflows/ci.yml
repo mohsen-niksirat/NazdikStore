@@ -9,6 +9,9 @@ on:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      FORCE_STUBS: "1"
+      CI: "true"
     steps:
       - uses: actions/checkout@v4
 
@@ -19,48 +22,29 @@ jobs:
       - name: Pure smoke (no deps)
         run: node apps/api/test/ci-pure.cjs
 
-      # Install at REPO ROOT — npm workspaces hoist packages here
-      - name: Install test deps (repo root, workspaces disabled)
+      # Only TypeScript is required for on-the-fly transpile.
+      # Nest/rxjs/prisma are STUBBED (FORCE_STUBS=1) — real @nestjs/common
+      # + hoisted rxjs breaks Node 22 ESM with ERR_UNSUPPORTED_DIR_IMPORT.
+      - name: Install TypeScript only
         run: |
           set -eux
-          npm install \
-            typescript \
-            @nestjs/jwt \
-            @nestjs/common \
-            @nestjs/core \
-            @nestjs/testing \
-            @nestjs/passport \
-            passport \
-            passport-jwt \
-            class-validator \
-            class-transformer \
-            ioredis \
-            reflect-metadata \
-            rxjs \
-            helmet \
-            libphonenumber-js \
-            validator \
-            --no-package-lock \
-            --no-save \
-            --workspaces=false \
-            --registry https://registry.npmjs.org \
-            --fetch-retries=5
+          npm install typescript --no-package-lock --no-save --registry https://registry.npmjs.org --fetch-retries=5
+          node -e "console.log('ts', require('typescript').version)"
 
-      - name: Mirror deps into apps/api/node_modules
+      - name: Bootstrap stubs into apps/api/node_modules
+        working-directory: apps/api
+        env:
+          FORCE_STUBS: "1"
         run: |
           set -eux
-          mkdir -p apps/api/node_modules
-          # link/copy hoisted packages so absolute path requires also work
-          for p in typescript @nestjs @prisma class-validator class-transformer ioredis reflect-metadata rxjs helmet libphonenumber-js validator passport passport-jwt; do
-            if [ -e "node_modules/$p" ] && [ ! -e "apps/api/node_modules/$p" ]; then
-              cp -a "node_modules/$p" "apps/api/node_modules/$p" 2>/dev/null || true
-            fi
-          done
-          node -e "console.log('ts', require('typescript').version); console.log('jwt', require.resolve('@nestjs/jwt'))"
-          cd apps/api && node test/ci-bootstrap.cjs
+          node test/ci-bootstrap.cjs
+          # ensure jwt stub resolves from apps/api
+          node -e "console.log('jwt', require.resolve('@nestjs/jwt'))"
 
       - name: Phase 1-5 unit + prod guards
         working-directory: apps/api
+        env:
+          FORCE_STUBS: "1"
         run: |
           set -eux
           node test/run-phase1.cjs
@@ -73,12 +57,12 @@ jobs:
       - name: Mini API smoke (phase 6-10)
         working-directory: apps/api
         env:
+          FORCE_STUBS: "1"
           REDIS_URL: ""
           ALLOW_OFFLINE: "1"
           PORT: "4000"
         run: |
           set -eux
-          node -e "console.log('jwt resolve', require.resolve('@nestjs/jwt'))"
           node test/mini-server.cjs > /tmp/api.log 2>&1 &
           API_PID=$!
           UP=0

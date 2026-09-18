@@ -377,20 +377,48 @@ function missing(name) {
   }
 }
 
-if (missing('@nestjs/common')) stubNestCommon();
-if (missing('@nestjs/jwt')) stubNestJwt();
-if (missing('@nestjs/testing')) stubNestTesting();
-if (missing('@nestjs/core')) stubNestCore();
-if (missing('@nestjs/passport')) stubNestPassport();
-if (missing('class-validator')) stubOthers();
-if (missing('ioredis')) {
-  try { require.resolve('ioredis', { paths: [API] }); } catch { stubOthers(); }
+const forceStubs =
+  process.env.FORCE_STUBS === '1' || process.env.CI === 'true';
+
+if (forceStubs) {
+  console.log('FORCE_STUBS — writing Nest/rxjs stubs (avoid ESM dir-import issues)');
+  stubNestCommon();
+  stubNestJwt();
+  stubNestTesting();
+  stubNestCore();
+  stubNestPassport();
+  stubOthers();
+  stubValidator();
+  // Overwrite real rxjs that breaks require('rxjs/operators') on Node ESM
+  pkg('rxjs', 'index.js');
+  write(
+    path.join(NM, 'rxjs/index.js'),
+    `module.exports = { of: (x) => ({ subscribe() {} }), map: () => ({}), operators: {} };\n`,
+  );
+  write(
+    path.join(NM, 'rxjs/operators/index.js'),
+    `module.exports = {};\n`,
+  );
+  write(
+    path.join(NM, 'rxjs/operators.js'),
+    `module.exports = {};\n`,
+  );
+  pkg('@nestjs/common', 'index.js');
+} else {
+  if (missing('@nestjs/common')) stubNestCommon();
+  if (missing('@nestjs/jwt')) stubNestJwt();
+  if (missing('@nestjs/testing')) stubNestTesting();
+  if (missing('@nestjs/core')) stubNestCore();
+  if (missing('@nestjs/passport')) stubNestPassport();
+  if (missing('class-validator')) stubOthers();
+  if (missing('ioredis')) {
+    try { require.resolve('ioredis', { paths: [API] }); } catch { stubOthers(); }
+  }
+  if (missing('@prisma/client')) {
+    try { require.resolve('@prisma/client', { paths: [API] }); } catch { stubOthers(); }
+  }
+  stubValidator();
 }
-if (missing('@prisma/client')) {
-  try { require.resolve('@prisma/client', { paths: [API] }); } catch { stubOthers(); }
-}
-// Always ensure class-validator transitive deps (real class-validator loads these at require-time)
-stubValidator();
 
 // Quick probe: what can we resolve?
 function tryReq(name) {
