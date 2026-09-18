@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Loader2, MapPin } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
+const OFFLINE_HINT =
+  'ارتباط با سرور برقرار نشد. API را بالا بیاورید: cd apps/api سپس npm run dev';
 
 type Step = 'phone' | 'otp' | 'profile';
 
@@ -80,7 +82,7 @@ export default function AuthPage() {
       setStep('otp');
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
     } catch {
-      setError('ارتباط با سرور برقرار نشد. API روی پورت ۴۰۰۰ بالا باشد.');
+      setError(OFFLINE_HINT);
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,7 @@ export default function AuthPage() {
         setSuccessMsg('ورود موفق بود. خوش آمدید!');
       }
     } catch {
-      setError('ارتباط با سرور برقرار نشد.');
+      setError(OFFLINE_HINT);
     } finally {
       setLoading(false);
     }

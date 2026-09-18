@@ -216,6 +216,62 @@ function attachVendorRoutes(ctx, match, json, readBody, authUser) {
       .then((data) => json(res, 200, { success: true, data }))
       .catch((err) => json(res, 400, { success: false, error: { message: err.message } }));
   });
+
+  // ── RFQ quotes ──
+  match('GET', '/jobs/:id/quotes', (req, res, params) => {
+    const user = authUser(ctx, req);
+    if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
+    try {
+      const data = ctx.rfq.listQuotes(params.id, user);
+      return json(res, 200, { success: true, data });
+    } catch (e) {
+      return json(res, 400, { success: false, error: { message: e.message } });
+    }
+  });
+
+  match('POST', '/jobs/:id/quotes', async (req, res, params) => {
+    const user = authUser(ctx, req);
+    if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
+    const body = await readBody(req);
+    try {
+      const data = ctx.rfq.submitQuote({
+        jobRequestId: params.id,
+        vendorProfileId: `vp_${user.sub}`,
+        priceToman: Number(body.priceToman) || 0,
+        etaHours: Number(body.etaHours) || 1,
+        message: body.message,
+      });
+      return json(res, 200, { success: true, data });
+    } catch (e) {
+      return json(res, 400, { success: false, error: { message: e.message } });
+    }
+  });
+
+  match('POST', '/jobs/:id/quotes/:quoteId/accept', (req, res, params) => {
+    const user = authUser(ctx, req);
+    if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
+    try {
+      const data = ctx.rfq.acceptQuote({
+        jobRequestId: params.id,
+        quoteId: params.quoteId,
+        consumerId: user.sub,
+      });
+      return json(res, 200, { success: true, data });
+    } catch (e) {
+      const status = e.status || e.response?.status || 400;
+      return json(res, status, {
+        success: false,
+        error: { code: e.code || e.response?.code, message: e.message, details: e.response?.details },
+      });
+    }
+  });
+
+  match('GET', '/jobs/open', (req, res) => {
+    const user = authUser(ctx, req);
+    if (!user) return json(res, 401, { success: false, error: { code: 'UNAUTHORIZED' } });
+    const data = ctx.rfq.listOpenJobsForVendor(`vp_${user.sub}`);
+    return json(res, 200, { success: true, data });
+  });
 }
 
 module.exports = { attachVendorRoutes };

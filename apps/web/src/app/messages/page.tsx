@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Bell, MessageCircle } from 'lucide-react';
+import { apiFetch } from '@/lib/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
 const TOKEN_KEY = 'nazdik_token';
@@ -27,24 +28,6 @@ type Notice = {
   createdAt: string;
 };
 
-function token() {
-  return typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
-}
-
-async function api(path: string, init?: RequestInit) {
-  const t = token();
-  const res = await fetch(`${API}/api/v1${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(t ? { Authorization: `Bearer ${t}` } : {}),
-      ...(init?.headers || {}),
-    },
-  });
-  const body = await res.json().catch(() => ({}));
-  return { ok: res.ok && body.success !== false, body };
-}
-
 const TOPIC_FA: Record<string, string> = {
   'chat.message': 'پیام جدید چت',
   'payment.paid': 'پرداخت موفق',
@@ -61,6 +44,7 @@ export default function MessagesPage() {
   const [text, setText] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     const u = localStorage.getItem(USER_KEY);
@@ -71,50 +55,62 @@ export default function MessagesPage() {
         /* ignore */
       }
     }
+  }, []);
+
+  const loadChat = useCallback(async () => {
+    const r = await apiFetch<Msg[]>(`/orders/${orderId}/messages`);
+    if (r.offline) {
+      setOffline(true);
+      setErr(r.error);
+      return;
+    }
+    setOffline(false);
+    if (r.ok) setMessages(r.data || []);
+  }, [orderId]);
+
+  const loadNotices = useCallback(async () => {
+    const r = await apiFetch<Notice[]>('/notifications');
+    if (r.ok) setNotices(r.data || []);
+  }, []);
+
+  useEffect(() => {
     void loadChat();
     void loadNotices();
     const t = setInterval(() => {
       void loadChat();
       void loadNotices();
-    }, 4000);
+    }, 5000);
     return () => clearInterval(t);
-  }, [orderId]);
-
-  const loadChat = useCallback(async () => {
-    const r = await api(`/orders/${orderId}/messages`);
-    if (r.ok) setMessages(r.body.data || []);
-  }, [orderId]);
-
-  const loadNotices = useCallback(async () => {
-    const r = await api('/notifications');
-    if (r.ok) setNotices(r.body.data || []);
-  }, []);
+  }, [loadChat, loadNotices]);
 
   async function ensureLogin(role: 'CONSUMER' | 'VENDOR') {
     const id = role === 'VENDOR' ? 'vendor_demo' : 'consumer_demo';
-    const r = await api('/auth/dev-login', {
-      method: 'POST',
-      body: JSON.stringify({ role, id }),
-    });
-    if (!r.ok) {
-      setErr('ورود ناموفق');
+    const r = await apiFetch<{ user: { id: string; role: string }; tokens: { accessToken: string } }>(
+      '/auth/dev-login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ role, id }),
+      },
+    );
+    if (!r.ok || !r.data) {
+      setErr(r.error || 'ورود ناموفق — API روی ۴۰۰۰؟');
       return;
     }
-    localStorage.setItem(TOKEN_KEY, r.body.data.tokens.accessToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(r.body.data.user));
-    setUser(r.body.data.user);
+    localStorage.setItem(TOKEN_KEY, r.data.tokens.accessToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(r.data.user));
+    setUser(r.data.user);
     setMsg(`ورود ${role}`);
   }
 
   async function send() {
     if (!text.trim()) return;
     setErr(null);
-    const r = await api(`/orders/${orderId}/messages`, {
+    const r = await apiFetch(`/orders/${orderId}/messages`, {
       method: 'POST',
       body: JSON.stringify({ body: text }),
     });
     if (!r.ok) {
-      setErr(r.body.error?.message || 'ارسال ناموفق — ابتدا وارد شوید');
+      setErr(r.error || 'ارسال ناموفق — ابتدا وارد شوید');
       return;
     }
     setText('');
@@ -133,8 +129,16 @@ export default function MessagesPage() {
         </Link>
       </div>
 
+      {offline && (
+        <div className="alert alert-error">
+          API روی پورت ۴۰۰۰ بالا نیست. در ترمینال:
+          <code className="mono" style={{ display: 'block', marginTop: 6, fontSize: 12 }}>
+            cd apps\api &amp;&amp; npm run dev
+          </code>
+        </div>
+      )}
       {msg && <div className="alert alert-ok">{msg}</div>}
-      {err && <div className="alert alert-error">{err}</div>}
+      {err && !offline && <div className="alert alert-error">{err}</div>}
 
       {!user ? (
         <section className="card stack-3">

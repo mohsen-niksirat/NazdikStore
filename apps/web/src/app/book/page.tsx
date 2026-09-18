@@ -165,6 +165,7 @@ export default function BookPage() {
         return;
       }
       const jobId = body.data.job?.id || body.data.id;
+      if (jobId) sessionStorage.setItem('nazdik_job_id', jobId);
       setMsg(
         `درخواست «${jobTitle}» ثبت شد.\nشناسه: ${jobId}\nبه فروشندگان خدمات میدانی نزدیک اطلاع داده شد.`,
       );
@@ -257,6 +258,9 @@ export default function BookPage() {
         </section>
       )}
 
+      <Link href="/rfq" className="btn-secondary">
+        مشاهده پیشنهادهای خدمت
+      </Link>
       <Link href="/map" className="btn-secondary">
         نقشه نزدیک
       </Link>

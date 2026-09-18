@@ -47,6 +47,9 @@ export default function HomePage() {
           <Link href="/book" className="btn-secondary">
             نوبت و درخواست خدمت
           </Link>
+          <Link href="/rfq" className="btn-secondary">
+            پیشنهادهای خدمت
+          </Link>
         </div>
       </section>
 
