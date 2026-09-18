@@ -389,7 +389,28 @@ if (missing('ioredis')) {
 if (missing('@prisma/client')) {
   try { require.resolve('@prisma/client', { paths: [API] }); } catch { stubOthers(); }
 }
+// Always ensure class-validator transitive deps (real class-validator loads these at require-time)
 stubValidator();
+
+// Quick probe: what can we resolve?
+function tryReq(name) {
+  try {
+    require.resolve(name, { paths: [API, EXTRA, NM].filter(Boolean) });
+    return 'ok';
+  } catch {
+    return 'MISSING';
+  }
+}
+console.log('resolve check:', {
+  typescript: tryReq('typescript'),
+  'nestjs/common': tryReq('@nestjs/common'),
+  'nestjs/jwt': tryReq('@nestjs/jwt'),
+  'class-validator': tryReq('class-validator'),
+  'libphonenumber-js': tryReq('libphonenumber-js'),
+  validator: tryReq('validator'),
+  ioredis: tryReq('ioredis'),
+});
+
 
 // NODE_PATH for isolated CI deps
 if (EXTRA) {
