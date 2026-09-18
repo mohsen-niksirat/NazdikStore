@@ -196,6 +196,12 @@ function main() {
   } catch (err) {
     console.warn('phase7-routes not attached:', (err && err.message) || err);
   }
+  try {
+    const { attachVendorOpsRoutes } = require('./phase8-routes.cjs');
+    attachVendorOpsRoutes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('phase8-routes not attached:', (err && err.message) || err);
+  }
 
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);

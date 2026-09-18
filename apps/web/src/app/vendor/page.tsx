@@ -233,8 +233,8 @@ export default function VendorDashboardPage() {
           <h1 className="h1">پنل فروشنده</h1>
           <p className="caption">فاز ۶ · مدیریت محصول، پست و سفارش</p>
         </div>
-        <Link href="/" className="btn-ghost">
-          خانه
+        <Link href="/vendor/board" className="btn-ghost">
+          مرکز فروشنده
         </Link>
       </div>
 
