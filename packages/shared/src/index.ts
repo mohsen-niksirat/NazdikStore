@@ -10,3 +10,4 @@ export * from './tracking';
 export * from './search';
 export * from './loyalty';
 export * from './escrow';
+export * from './assistant';
