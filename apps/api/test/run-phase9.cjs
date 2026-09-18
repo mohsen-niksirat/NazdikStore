@@ -1,5 +1,5 @@
-/**
- * Phase 9–10 smoke: chat + notifications + PWA assets present.
+﻿/**
+ * Phase 9â€“10 smoke: chat + notifications + PWA assets present.
  */
 const http = require('http');
 const fs = require('fs');
@@ -51,7 +51,7 @@ async function it(name, fn) {
     console.log('  OK ' + name);
   } catch (e) {
     results.failed++;
-    console.log('  FAIL ' + name + ' — ' + e.message);
+    console.log('  FAIL ' + name + ' â€” ' + e.message);
   }
 }
 
@@ -60,9 +60,9 @@ function assert(c, m) {
 }
 
 async function main() {
-  console.log('Phase 9–10 smoke');
+  console.log('Phase 9â€“10 smoke');
 
-  console.log('\nPhase 9 — Chat & notifications');
+  console.log('\nPhase 9 â€” Chat & notifications');
   let token = null;
   await it('consumer login', async () => {
     const r = await req('POST', '/auth/dev-login', { role: 'CONSUMER', id: 'consumer_demo' });
@@ -71,8 +71,8 @@ async function main() {
   });
 
   await it('send chat message', async () => {
-    const r = await req('POST', '/orders/demo_order/messages', { body: 'سلام از تست فاز ۹' }, token);
-    assert(r.body.success && r.body.data.body.includes('سلام'));
+    const r = await req('POST', '/orders/demo_order/messages', { body: 'Ø³Ù„Ø§Ù… Ø§Ø² ØªØ³Øª ÙØ§Ø² Û¹' }, token);
+    assert(r.body.success && r.body.data.body.includes('Ø³Ù„Ø§Ù…'));
   });
 
   await it('list chat messages', async () => {
@@ -85,7 +85,7 @@ async function main() {
     assert(r.body.success && Array.isArray(r.body.data));
   });
 
-  console.log('\nPhase 10 — PWA assets');
+  console.log('\nPhase 10 â€” PWA assets');
   await it('manifest.webmanifest exists', async () => {
     const p = path.join(WEB, 'manifest.webmanifest');
     assert(fs.existsSync(p), p);
@@ -113,3 +113,4 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+

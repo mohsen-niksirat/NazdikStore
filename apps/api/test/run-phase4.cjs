@@ -1,5 +1,5 @@
-/**
- * Phase 4 test runner — time-slots (concurrency), cart/delivery, RFQ, state machine.
+﻿/**
+ * Phase 4 test runner â€” time-slots (concurrency), cart/delivery, RFQ, state machine.
  */
 const path = require('path');
 const fs = require('fs');
@@ -12,6 +12,8 @@ const SHARED_SRC = path.join(ROOT, '..', '..', 'packages', 'shared', 'src');
 const API_SRC = path.join(ROOT, 'src');
 const apiNM = path.join(ROOT, 'node_modules');
 const rootNM = path.join(ROOT, '..', 'node_modules');
+const ciNM = process.env.CI_NODE_MODULES || '';
+const searchRoots = [apiNM, rootNM, ciNM].filter(Boolean);
 
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.REDIS_URL = '';
@@ -39,7 +41,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
   try {
     return origResolve.call(this, request, parent, ...rest);
   } catch (e) {
-    const candidate = path.join(apiNM, request);
+    const candidate = path.join(base, request);
     if (fs.existsSync(candidate) || fs.existsSync(`${candidate}.js`)) {
       return origResolve.call(this, candidate, parent, ...rest);
     }
@@ -49,7 +51,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
 const origPaths = Module._nodeModulePaths;
 Module._nodeModulePaths = function (from) {
   const paths = origPaths.call(this, from);
-  paths.unshift(apiNM, rootNM);
+  paths.unshift(...(typeof searchRoots !== 'undefined' ? searchRoots : [apiNM, rootNM]));
   return paths;
 };
 
@@ -73,16 +75,16 @@ async function run() {
       try {
         await test.fn();
         results.passed++;
-        console.log(`  ✓ ${test.name}`);
+        console.log(`  âœ“ ${test.name}`);
       } catch (err) {
         results.failed++;
         results.errors.push({ suite: suite.name, test: test.name, err });
-        console.log(`  ✗ ${test.name}`);
+        console.log(`  âœ— ${test.name}`);
         console.log(`    ${err?.message || err}`);
       }
     }
   }
-  console.log('\n────────────────────────────────');
+  console.log('\nâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€');
   console.log(`Passed: ${results.passed}`);
   console.log(`Failed: ${results.failed}`);
   if (results.errors.length) {
@@ -122,7 +124,7 @@ async function main() {
     return { reviews, slots, orders, rfq, map };
   }
 
-  // ── State machine ──
+  // â”€â”€ State machine â”€â”€
   describe('Order state machine (Phase 4 criterion)', () => {
     it('allows happy-path delivery lifecycle', () => {
       assert.ok(state.canTransition('PENDING_ACCEPTANCE', 'PREPARING'));
@@ -130,28 +132,28 @@ async function main() {
       assert.ok(state.canTransition('IN_PROGRESS', 'COMPLETED'));
     });
 
-    it('allows appointment SCHEDULED → IN_PROGRESS → COMPLETED', () => {
+    it('allows appointment SCHEDULED â†’ IN_PROGRESS â†’ COMPLETED', () => {
       assert.ok(state.canTransition('SCHEDULED', 'IN_PROGRESS'));
       assert.ok(state.canTransition('IN_PROGRESS', 'COMPLETED'));
     });
 
-    it('forbids CANCELLED → COMPLETED (explicit brief requirement)', () => {
+    it('forbids CANCELLED â†’ COMPLETED (explicit brief requirement)', () => {
       assert.strictEqual(state.canTransition('CANCELLED', 'COMPLETED'), false);
       assert.throws(() => state.assertTransition('CANCELLED', 'COMPLETED'));
     });
 
-    it('forbids COMPLETED → anything', () => {
+    it('forbids COMPLETED â†’ anything', () => {
       for (const to of state.ORDER_STATUSES) {
         if (to === 'COMPLETED') continue;
         assert.strictEqual(state.canTransition('COMPLETED', to), false);
       }
     });
 
-    it('forbids skipping PENDING_ACCEPTANCE → COMPLETED', () => {
+    it('forbids skipping PENDING_ACCEPTANCE â†’ COMPLETED', () => {
       assert.strictEqual(state.canTransition('PENDING_ACCEPTANCE', 'COMPLETED'), false);
     });
 
-    it('forbids PREPARING → COMPLETED without IN_PROGRESS', () => {
+    it('forbids PREPARING â†’ COMPLETED without IN_PROGRESS', () => {
       assert.strictEqual(state.canTransition('PREPARING', 'COMPLETED'), false);
     });
 
@@ -201,12 +203,12 @@ async function main() {
     });
   });
 
-  // ── Time slots ──
+  // â”€â”€ Time slots â”€â”€
   describe('Time-slot engine & atomic booking (Phase 4 criterion)', () => {
     it('expands schedule into slots excluding breaks', () => {
       const rules = [
         {
-          weekday: 1, // Monday — 2026-09-21 is a Monday
+          weekday: 1, // Monday â€” 2026-09-21 is a Monday
           startMinute: 9 * 60,
           endMinute: 12 * 60,
           slotMinutes: 30,
@@ -216,12 +218,12 @@ async function main() {
       // 2026-09-21 is Monday
       const day = '2026-09-21';
       const slots = expandDaySlots(rules, day);
-      // 9:00, 9:30, [10:00 break skip], 10:30, 11:00, 11:30 → 5 slots
+      // 9:00, 9:30, [10:00 break skip], 10:30, 11:00, 11:30 â†’ 5 slots
       assert.strictEqual(slots.length, 5, JSON.stringify(slots));
       assert.ok(!slots.some((s) => s.startMinute === 10 * 60));
     });
 
-    it('two simultaneous bookings → exactly one success and one 409 (Phase 4 criterion)', async () => {
+    it('two simultaneous bookings â†’ exactly one success and one 409 (Phase 4 criterion)', async () => {
       const { slots, orders } = makeStack();
       slots.setSchedule('vp_doc', [
         {
@@ -297,14 +299,14 @@ async function main() {
     });
   });
 
-  // ── Cart & delivery ──
+  // â”€â”€ Cart & delivery â”€â”€
   describe('Cart & delivery engine', () => {
     it('creates order with total and lines', async () => {
       const { orders } = makeStack();
       orders.seedInventory({
         productId: 'prod_ghorme',
         vendorProfileId: 'vp_food_1',
-        title: 'قورمه',
+        title: 'Ù‚ÙˆØ±Ù…Ù‡',
         priceToman: 185000,
         stock: 10,
         leadTimeMinutes: 60,
@@ -313,9 +315,9 @@ async function main() {
         consumerId: 'c1',
         vendorProfileId: 'vp_food_1',
         lines: [
-          { productId: 'prod_ghorme', title: 'قورمه', unitPriceToman: 185000, quantity: 2 },
+          { productId: 'prod_ghorme', title: 'Ù‚ÙˆØ±Ù…Ù‡', unitPriceToman: 185000, quantity: 2 },
         ],
-        deliveryAddress: 'تهران',
+        deliveryAddress: 'ØªÙ‡Ø±Ø§Ù†',
       });
       assert.strictEqual(o.kind, 'DELIVERY');
       assert.strictEqual(o.status, 'PENDING_ACCEPTANCE');
@@ -356,7 +358,7 @@ async function main() {
         vendorProfileId: 'vp_f',
         lines: [{ productId: 'p2', title: 'bread', unitPriceToman: 25000, quantity: 2 }],
       });
-      // access private inventory via seed behavior — create another order
+      // access private inventory via seed behavior â€” create another order
       await orders.createDeliveryOrder({
         consumerId: 'c',
         vendorProfileId: 'vp_f',
@@ -394,8 +396,8 @@ async function main() {
         priceToman: 200000,
         stock: 10,
         variations: [
-          { id: 'small', label: 'کوچک', priceToman: 150000 },
-          { id: 'large', label: 'بزرگ', priceToman: 250000 },
+          { id: 'small', label: 'Ú©ÙˆÚ†Ú©', priceToman: 150000 },
+          { id: 'large', label: 'Ø¨Ø²Ø±Ú¯', priceToman: 250000 },
         ],
       });
       const o = await orders.createDeliveryOrder({
@@ -416,7 +418,7 @@ async function main() {
     });
   });
 
-  // ── RFQ ──
+  // â”€â”€ RFQ â”€â”€
   describe('RFQ / reverse bidding engine', () => {
     it('broadcasts job to nearby field-service vendors', () => {
       const { rfq, map } = makeStack();
@@ -452,8 +454,8 @@ async function main() {
       ]);
       const { job, broadcastVendorIds } = rfq.createJobRequest({
         consumerId: 'c1',
-        title: 'تعمیر پکیج',
-        description: 'پکیج روشن نمی‌شود',
+        title: 'ØªØ¹Ù…ÛŒØ± Ù¾Ú©ÛŒØ¬',
+        description: 'Ù¾Ú©ÛŒØ¬ Ø±ÙˆØ´Ù† Ù†Ù…ÛŒâ€ŒØ´ÙˆØ¯',
         lat: 35.69,
         lng: 51.39,
         radiusKm: 5,
@@ -467,8 +469,8 @@ async function main() {
       const { rfq, orders } = makeStack();
       const { job } = rfq.createJobRequest({
         consumerId: 'c1',
-        title: 'لوله‌کشی',
-        description: 'نشتی زیر سینک',
+        title: 'Ù„ÙˆÙ„Ù‡â€ŒÚ©Ø´ÛŒ',
+        description: 'Ù†Ø´ØªÛŒ Ø²ÛŒØ± Ø³ÛŒÙ†Ú©',
         lat: 35.6892,
         lng: 51.389,
         radiusKm: 10,
@@ -508,7 +510,7 @@ async function main() {
       assert.strictEqual(order.vendorProfileId, 'vp_b');
     });
 
-    it('second accept on same job → 409 CONFLICT', () => {
+    it('second accept on same job â†’ 409 CONFLICT', () => {
       const { rfq } = makeStack();
       const { job } = rfq.createJobRequest({
         consumerId: 'c1',
@@ -563,3 +565,4 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+

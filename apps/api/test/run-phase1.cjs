@@ -50,6 +50,8 @@ Module._extensions['.ts'] = function (module, filename) {
 // --- module aliases ---
 const apiNM = path.join(ROOT, 'node_modules');
 const rootNM = path.join(ROOT, '..', 'node_modules');
+const ciNM = process.env.CI_NODE_MODULES || '';
+const searchRoots = [apiNM, rootNM, ciNM].filter(Boolean);
 const origResolve = Module._resolveFilename;
 Module._resolveFilename = function (request, parent, ...rest) {
   if (request === '@nazdik/shared') {
@@ -59,20 +61,17 @@ Module._resolveFilename = function (request, parent, ...rest) {
     const rel = request.replace(/^@\/(src\/)?/, '');
     return path.join(API_SRC, rel.endsWith('.ts') ? rel : `${rel}.ts`);
   }
-  // Prefer api node_modules then root
+  // Prefer api node_modules then root then CI isolated deps
   try {
     return origResolve.call(this, request, parent, ...rest);
   } catch (e) {
-    try {
-      return origResolve.call(this, request, { ...parent, paths: [apiNM, rootNM] }, ...rest);
-    } catch (e2) {
-      // try absolute in api nm
-      const candidate = path.join(apiNM, request);
+    for (const base of searchRoots) {
+      const candidate = path.join(base, request);
       if (fs.existsSync(candidate) || fs.existsSync(`${candidate}.js`) || fs.existsSync(path.join(candidate, 'index.js'))) {
         return origResolve.call(this, candidate, parent, ...rest);
       }
-      throw e2;
     }
+    throw e;
   }
 };
 
@@ -80,7 +79,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
 const origPaths = Module._nodeModulePaths;
 Module._nodeModulePaths = function (from) {
   const paths = origPaths.call(this, from);
-  paths.unshift(apiNM, rootNM);
+  paths.unshift(...searchRoots);
   return paths;
 };
 

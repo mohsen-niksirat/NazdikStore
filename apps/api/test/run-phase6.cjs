@@ -1,5 +1,5 @@
-/**
- * Phase 6–8 smoke tests against running mini API (port 4000).
+﻿/**
+ * Phase 6â€“8 smoke tests against running mini API (port 4000).
  * Run: node apps/api/test/run-phase6.cjs
  */
 const http = require('http');
@@ -52,7 +52,7 @@ function it(name, fn) {
     .catch((err) => {
       results.failed++;
       results.errors.push({ name, err });
-      console.log('  FAIL ' + name + ' — ' + (err && err.message));
+      console.log('  FAIL ' + name + ' â€” ' + (err && err.message));
     });
 }
 
@@ -61,7 +61,7 @@ function assert(cond, msg) {
 }
 
 async function main() {
-  console.log('Phase 6–8 API smoke @', BASE);
+  console.log('Phase 6â€“8 API smoke @', BASE);
 
   console.log('\nHealth');
   await it('health ok', async () => {
@@ -69,13 +69,13 @@ async function main() {
     assert(r.status === 200 && r.body.success, JSON.stringify(r.body));
   });
 
-  console.log('\nPhase 6 — Vendor dashboard API');
+  console.log('\nPhase 6 â€” Vendor dashboard API');
   let vendorToken = null;
   await it('dev-login vendor', async () => {
     const r = await req('POST', '/auth/dev-login', {
       role: 'VENDOR',
       id: 'vendor_demo',
-      businessName: 'آشپزخانه فروشنده',
+      businessName: 'Ø¢Ø´Ù¾Ø²Ø®Ø§Ù†Ù‡ ÙØ±ÙˆØ´Ù†Ø¯Ù‡',
     });
     assert(r.body.success, JSON.stringify(r.body));
     vendorToken = r.body.data.tokens.accessToken;
@@ -86,10 +86,10 @@ async function main() {
     const r = await req(
       'POST',
       '/vendors/me/products',
-      { title: 'قورمه سبزی', priceToman: 185000, stock: 10 },
+      { title: 'Ù‚ÙˆØ±Ù…Ù‡ Ø³Ø¨Ø²ÛŒ', priceToman: 185000, stock: 10 },
       vendorToken,
     );
-    assert(r.body.success && r.body.data.title === 'قورمه سبزی', JSON.stringify(r.body));
+    assert(r.body.success && r.body.data.title === 'Ù‚ÙˆØ±Ù…Ù‡ Ø³Ø¨Ø²ÛŒ', JSON.stringify(r.body));
   });
 
   await it('vendor lists products', async () => {
@@ -111,13 +111,13 @@ async function main() {
     const r = await req(
       'POST',
       '/vendors/me/posts',
-      { caption: 'غذای امروز آماده است' },
+      { caption: 'ØºØ°Ø§ÛŒ Ø§Ù…Ø±ÙˆØ² Ø¢Ù…Ø§Ø¯Ù‡ Ø§Ø³Øª' },
       vendorToken,
     );
-    assert(r.body.success && r.body.data.caption.includes('امروز'));
+    assert(r.body.success && r.body.data.caption.includes('Ø§Ù…Ø±ÙˆØ²'));
   });
 
-  console.log('\nPhase 7 — Consumer cart & payment');
+  console.log('\nPhase 7 â€” Consumer cart & payment');
   let consumerToken = null;
   let orderId = null;
   await it('dev-login consumer', async () => {
@@ -132,8 +132,8 @@ async function main() {
       '/orders/delivery',
       {
         vendorProfileId: 'vp_vendor_demo',
-        deliveryAddress: 'تهران',
-        lines: [{ productId: 'x', title: 'قورمه سبزی', unitPriceToman: 185000, quantity: 1 }],
+        deliveryAddress: 'ØªÙ‡Ø±Ø§Ù†',
+        lines: [{ productId: 'x', title: 'Ù‚ÙˆØ±Ù…Ù‡ Ø³Ø¨Ø²ÛŒ', unitPriceToman: 185000, quantity: 1 }],
       },
       consumerToken,
     );
@@ -156,7 +156,7 @@ async function main() {
     assert(sim.body.data.vendorCredit > 0);
   });
 
-  console.log('\nPhase 6 — Vendor order transition');
+  console.log('\nPhase 6 â€” Vendor order transition');
   await it('vendor sees order and completes lifecycle', async () => {
     const list = await req('GET', '/orders/vendor/me', null, vendorToken);
     assert(list.body.success);
@@ -177,7 +177,7 @@ async function main() {
     assert(t3.body.success || t2.body.success || true);
   });
 
-  console.log('\nPhase 8 — Admin');
+  console.log('\nPhase 8 â€” Admin');
   await it('admin dev-login', async () => {
     const r = await req('POST', '/auth/dev-login', { role: 'ADMIN', id: 'admin_demo' });
     assert(r.body.success && r.body.data.user.role === 'ADMIN');
@@ -196,3 +196,4 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+

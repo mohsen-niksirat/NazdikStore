@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 const fs = require('fs');
 const assert = require('assert');
 const Module = require('module');
@@ -9,6 +9,8 @@ const SHARED_SRC = path.join(ROOT, '..', '..', 'packages', 'shared', 'src');
 const API_SRC = path.join(ROOT, 'src');
 const apiNM = path.join(ROOT, 'node_modules');
 const rootNM = path.join(ROOT, '..', 'node_modules');
+const ciNM = process.env.CI_NODE_MODULES || '';
+const searchRoots = [apiNM, rootNM, ciNM].filter(Boolean);
 
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.REDIS_URL = '';
@@ -39,7 +41,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
   try {
     return origResolve.call(this, request, parent, ...rest);
   } catch (e) {
-    const candidate = path.join(apiNM, request);
+    const candidate = path.join(base, request);
     if (fs.existsSync(candidate) || fs.existsSync(candidate + '.js')) {
       return origResolve.call(this, candidate, parent, ...rest);
     }
@@ -49,7 +51,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
 const origPaths = Module._nodeModulePaths;
 Module._nodeModulePaths = function (from) {
   const paths = origPaths.call(this, from);
-  paths.unshift(apiNM, rootNM);
+  paths.unshift(...(typeof searchRoots !== 'undefined' ? searchRoots : [apiNM, rootNM]));
   return paths;
 };
 
@@ -359,3 +361,4 @@ main().catch(function (e) {
   console.error(e);
   process.exit(1);
 });
+

@@ -1,5 +1,5 @@
-/**
- * Phase 3 test runner — media pipeline, feed, purchase-gated reviews.
+﻿/**
+ * Phase 3 test runner â€” media pipeline, feed, purchase-gated reviews.
  */
 const path = require('path');
 const fs = require('fs');
@@ -12,6 +12,8 @@ const SHARED_SRC = path.join(ROOT, '..', '..', 'packages', 'shared', 'src');
 const API_SRC = path.join(ROOT, 'src');
 const apiNM = path.join(ROOT, 'node_modules');
 const rootNM = path.join(ROOT, '..', 'node_modules');
+const ciNM = process.env.CI_NODE_MODULES || '';
+const searchRoots = [apiNM, rootNM, ciNM].filter(Boolean);
 
 process.env.JWT_ACCESS_SECRET = 'test_access_secret';
 process.env.REDIS_URL = '';
@@ -40,7 +42,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
   try {
     return origResolve.call(this, request, parent, ...rest);
   } catch (e) {
-    const candidate = path.join(apiNM, request);
+    const candidate = path.join(base, request);
     if (fs.existsSync(candidate) || fs.existsSync(`${candidate}.js`)) {
       return origResolve.call(this, candidate, parent, ...rest);
     }
@@ -50,7 +52,7 @@ Module._resolveFilename = function (request, parent, ...rest) {
 const origPaths = Module._nodeModulePaths;
 Module._nodeModulePaths = function (from) {
   const paths = origPaths.call(this, from);
-  paths.unshift(apiNM, rootNM);
+  paths.unshift(...(typeof searchRoots !== 'undefined' ? searchRoots : [apiNM, rootNM]));
   return paths;
 };
 
@@ -74,16 +76,16 @@ async function run() {
       try {
         await test.fn();
         results.passed++;
-        console.log(`  ✓ ${test.name}`);
+        console.log(`  âœ“ ${test.name}`);
       } catch (err) {
         results.failed++;
         results.errors.push({ suite: suite.name, test: test.name, err });
-        console.log(`  ✗ ${test.name}`);
+        console.log(`  âœ— ${test.name}`);
         console.log(`    ${err?.message || err}`);
       }
     }
   }
-  console.log('\n────────────────────────────────');
+  console.log('\nâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€');
   console.log(`Passed: ${results.passed}`);
   console.log(`Failed: ${results.failed}`);
   if (results.errors.length) {
@@ -100,7 +102,7 @@ async function run() {
 function minimalJpeg(withExif = false) {
   const parts = [Buffer.from([0xff, 0xd8])]; // SOI
   if (withExif) {
-    // APP1 EXIF segment — payload "Exif\0\0" + junk
+    // APP1 EXIF segment â€” payload "Exif\0\0" + junk
     const payload = Buffer.concat([
       Buffer.from('Exif\0\0'),
       Buffer.from('MM\0*\0\0\0\0bGPSHERE'),
@@ -293,7 +295,7 @@ async function main() {
         vendorProfileId: 'vp_food_1',
         consumerId: 'c_ok',
         rating: 5,
-        body: 'عالی',
+        body: 'Ø¹Ø§Ù„ÛŒ',
       });
       assert.strictEqual(r.rating, 5);
       assert.ok(r.consumerLabel.includes('***') || r.consumerLabel.length > 0);
@@ -333,9 +335,9 @@ async function main() {
         reviewId: r1.id,
         vendorProfileId: 'vp_r',
         vendorUserId: 'vendor1',
-        body: 'ممنون از نظرتان',
+        body: 'Ù…Ù…Ù†ÙˆÙ† Ø§Ø² Ù†Ø¸Ø±ØªØ§Ù†',
       });
-      assert.ok(replied.reply?.body.includes('ممنون'));
+      assert.ok(replied.reply?.body.includes('Ù…Ù…Ù†ÙˆÙ†'));
       const sum = reviews.summaryForVendor('vp_r');
       assert.strictEqual(sum.count, 2);
       assert.strictEqual(sum.average, 4.5);
@@ -366,20 +368,20 @@ async function main() {
 
       feed.seedProfile({
         id: 'vp_food_1',
-        businessName: 'آشپزخانه مادر',
+        businessName: 'Ø¢Ø´Ù¾Ø²Ø®Ø§Ù†Ù‡ Ù…Ø§Ø¯Ø±',
         vendorType: 'FOOD',
         isHomeBased: true,
-        description: 'غذای خانگی',
+        description: 'ØºØ°Ø§ÛŒ Ø®Ø§Ù†Ú¯ÛŒ',
       });
       feed.createPost({
         vendorProfileId: 'vp_food_1',
-        caption: 'امروز قورمه',
+        caption: 'Ø§Ù…Ø±ÙˆØ² Ù‚ÙˆØ±Ù…Ù‡',
         imageUrls: ['/media/a.jpg'],
-        productTags: [{ productId: 'p1', title: 'قورمه', priceToman: 185000 }],
+        productTags: [{ productId: 'p1', title: 'Ù‚ÙˆØ±Ù…Ù‡', priceToman: 185000 }],
       });
       feed.createProduct({
         vendorProfileId: 'vp_food_1',
-        title: 'قورمه',
+        title: 'Ù‚ÙˆØ±Ù…Ù‡',
         priceToman: 185000,
         stock: 10,
       });
@@ -387,7 +389,7 @@ async function main() {
       await reviews.createReview({ vendorProfileId: 'vp_food_1', consumerId: 'c1', rating: 5 });
 
       const profile = feed.getVendorProfile('vp_food_1', reviews.summaryForVendor('vp_food_1'));
-      assert.strictEqual(profile.businessName, 'آشپزخانه مادر');
+      assert.strictEqual(profile.businessName, 'Ø¢Ø´Ù¾Ø²Ø®Ø§Ù†Ù‡ Ù…Ø§Ø¯Ø±');
       assert.strictEqual(profile.posts.length, 1);
       assert.strictEqual(profile.products.length, 1);
       assert.strictEqual(profile.products[0].priceToman, 185000);
@@ -423,7 +425,7 @@ async function main() {
         businessName: 'Home Kitchen',
         vendorType: 'FOOD',
         isHomeBased: true,
-        address: 'محدوده',
+        address: 'Ù…Ø­Ø¯ÙˆØ¯Ù‡',
         displayLat: 35.701,
         displayLng: 51.402,
       });
@@ -444,3 +446,4 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+

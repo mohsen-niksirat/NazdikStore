@@ -1,5 +1,5 @@
-/**
- * Production hardening checks (offline — no network).
+﻿/**
+ * Production hardening checks (offline â€” no network).
  */
 const path = require('path');
 const fs = require('fs');
@@ -11,6 +11,8 @@ const SHARED_SRC = path.join(ROOT, '..', '..', 'packages', 'shared', 'src');
 const API_SRC = path.join(ROOT, 'src');
 const apiNM = path.join(ROOT, 'node_modules');
 const rootNM = path.join(ROOT, '..', 'node_modules');
+const ciNM = process.env.CI_NODE_MODULES || '';
+const searchRoots = [apiNM, rootNM, ciNM].filter(Boolean);
 
 const compileTs = (p) =>
   ts.transpileModule(fs.readFileSync(p, 'utf8'), {
@@ -51,7 +53,7 @@ function ok(name, cond, detail) {
     console.log('  OK ' + name);
   } else {
     failed++;
-    console.log('  FAIL ' + name + (detail ? ' — ' + detail : ''));
+    console.log('  FAIL ' + name + (detail ? ' â€” ' + detail : ''));
   }
 }
 
@@ -105,3 +107,4 @@ main().catch((e) => {
   console.error(e);
   process.exit(1);
 });
+
