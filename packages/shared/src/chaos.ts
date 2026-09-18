@@ -41,6 +41,8 @@ export class SmsCircuitBreaker {
         switched = true;
         continue;
       }
+      // Using a non-first provider means we switched away from primary
+      if (i > 0) switched = true;
       try {
         await p.send(to, text);
         const h = this.health.get(p.name);
@@ -53,8 +55,8 @@ export class SmsCircuitBreaker {
         h.failures += 1;
         if (h.failures >= this.threshold) {
           h.openUntil = now + this.cooldownMs;
-          switched = true;
         }
+        switched = true;
       }
     }
     throw lastErr || new Error('ALL_SMS_PROVIDERS_DOWN');
