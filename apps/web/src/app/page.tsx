@@ -50,6 +50,9 @@ export default function HomePage() {
           <Link href="/rfq" className="btn-secondary">
             پیشنهادهای خدمت
           </Link>
+          <Link href="/orders" className="btn-secondary">
+            سفارش‌های من
+          </Link>
         </div>
       </section>
 

@@ -272,6 +272,68 @@ function attachVendorRoutes(ctx, match, json, readBody, authUser) {
     const data = ctx.rfq.listOpenJobsForVendor(`vp_${user.sub}`);
     return json(res, 200, { success: true, data });
   });
+
+  // ── Admin (v1.5) ──
+  function requireAdmin(req) {
+    const user = authUser(ctx, req);
+    if (!user || user.role !== 'ADMIN') return null;
+    return user;
+  }
+
+  match('GET', '/admin/overview', (req, res) => {
+    const admin = requireAdmin(req);
+    if (!admin) return json(res, 403, { success: false, error: { code: 'FORBIDDEN', message: 'ADMIN only' } });
+    const orders = [];
+    // collect orders via list methods
+    try {
+      const consumerOrders = ctx.orders.listForConsumer(admin.sub);
+      orders.push(...consumerOrders);
+    } catch { /* ignore */ }
+    // scan memory orders if service exposes map — fallback list all vendors
+    const vendorIds = ['vp_food_1', 'vp_vendor_demo', 'vp_clinic_demo', 'vp_field_1', 'vp_ref'];
+    for (const vp of vendorIds) {
+      try {
+        orders.push(...ctx.orders.listForVendor(vp));
+      } catch { /* ignore */ }
+    }
+    const unique = Array.from(new Map(orders.map((o) => [o.id, o])).values());
+    return json(res, 200, {
+      success: true,
+      data: {
+        platformBalanceToman: ctx.wallet.getBalance('platform'),
+        settlements: ctx.wallet.listSettlements(),
+        orders: unique,
+        orderCount: unique.length,
+        pendingCount: unique.filter((o) => o.status === 'PENDING_ACCEPTANCE').length,
+        disputedCount: unique.filter((o) => o.status === 'DISPUTED').length,
+      },
+    });
+  });
+
+  match('POST', '/admin/orders/:id/transitions', async (req, res, params) => {
+    const admin = requireAdmin(req);
+    if (!admin) return json(res, 403, { success: false, error: { code: 'FORBIDDEN' } });
+    const body = await readBody(req);
+    try {
+      const data = ctx.orders.transition(params.id, body.status, { id: admin.sub, role: 'ADMIN' });
+      return json(res, 200, { success: true, data });
+    } catch (e) {
+      return json(res, e.status || 400, { success: false, error: { message: e.message } });
+    }
+  });
+
+  match('GET', '/admin/disputes', (req, res) => {
+    const admin = requireAdmin(req);
+    if (!admin) return json(res, 403, { success: false, error: { code: 'FORBIDDEN' } });
+    const all = [];
+    for (const vp of ['vp_food_1', 'vp_vendor_demo', 'vp_clinic_demo', 'vp_field_1']) {
+      try {
+        all.push(...ctx.orders.listForVendor(vp));
+      } catch { /* ignore */ }
+    }
+    const disputes = all.filter((o) => o.status === 'DISPUTED');
+    return json(res, 200, { success: true, data: disputes });
+  });
 }
 
 module.exports = { attachVendorRoutes };

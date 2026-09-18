@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * Phase 9 — Order chat + notification center.
+ * Phase 9 / v1.4 — Order chat + notification center.
+ * Deep link: /messages?order=<orderId>
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -47,6 +48,9 @@ export default function MessagesPage() {
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const fromQuery = new URLSearchParams(window.location.search).get('order');
+    if (fromQuery) setOrderId(fromQuery);
     const u = localStorage.getItem(USER_KEY);
     if (u) {
       try {

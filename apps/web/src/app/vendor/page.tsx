@@ -366,6 +366,13 @@ export default function VendorDashboardPage() {
                   </div>
                   <div className="tag">{STATUS_FA[o.status] || o.status}</div>
                   <div className="flex flex-wrap gap-2">
+                    <Link
+                      href={`/messages?order=${encodeURIComponent(o.id)}`}
+                      className="btn-secondary"
+                      style={{ width: 'auto', minHeight: 40, padding: '0 14px' }}
+                    >
+                      چت سفارش
+                    </Link>
                     {o.status === 'PENDING_ACCEPTANCE' && (
                       <button type="button" className="btn-secondary" style={{ width: 'auto', minHeight: 40 }} onClick={() => void transition(o.id, 'PREPARING')}>
                         تایید سفارش
