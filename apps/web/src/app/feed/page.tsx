@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { EmptyState } from '@/components/empty-state';
 
+const CATS = [
+  { key: '', label: 'همه' },
+  { key: 'FOOD', label: 'غذا' },
+  { key: 'MEDICAL', label: 'پزشکی' },
+  { key: 'FIELD_SERVICE', label: 'خدمات' },
+  { key: 'BEAUTY', label: 'زیبایی' },
+];
+
 type FeedItem = {
   id: string;
   caption: string;
@@ -16,25 +24,15 @@ type FeedItem = {
 
 export default function FeedPage() {
   const [items, setItems] = useState<FeedItem[]>([]);
+  const [cat, setCat] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [offline, setOffline] = useState(false);
 
   useEffect(() => {
     (async () => {
       const r = await apiFetch<FeedItem[]>('/feed');
       if (!r.ok) {
-        setOffline(Boolean(r.offline));
-        setError(r.error);
-        setItems([
-          {
-            id: 'd1',
-            caption: 'قورمه سبزی امروز آماده است.',
-            createdAt: new Date().toISOString(),
-            businessName: 'آشپزخانه مادر',
-            vendorProfileId: 'vp_food_1',
-            productTags: [{ productId: 'p1', title: 'قورمه', priceToman: 185000 }],
-          },
-        ]);
+        setError(r.error || null);
+        setItems([]);
         return;
       }
       setItems(r.data || []);
@@ -43,35 +41,40 @@ export default function FeedPage() {
 
   return (
     <main className="page">
-      <div className="top-nav">
-        <div className="brand">
-          <h1 className="h1">خوراک محلی</h1>
-          <p className="caption">پست‌های فروشندگان نزدیک شما</p>
-        </div>
-        <Link href="/" className="btn-ghost">
-          خانه
-        </Link>
+      <section className="hero">
+        <div className="chip-proximity">خوراک محلی</div>
+        <h1 className="mt-3">چه خبر از اطراف شما؟</h1>
+        <p>پست‌های تازه فروشنده‌ها — برای ویترین کامل روی نام آن‌ها بزن.</p>
+      </section>
+
+      <div className="radius-row">
+        {CATS.map((c) => (
+          <button
+            key={c.key || 'all'}
+            type="button"
+            className={`pill${cat === c.key ? ' active' : ''}`}
+            onClick={() => setCat(c.key)}
+          >
+            {c.label}
+          </button>
+        ))}
       </div>
 
-      {error && (
-        <div className="alert alert-error" role="status">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-error">{error}</div>}
 
-      {items.length === 0 && !error && (
+      {!error && items.length === 0 && (
         <EmptyState
-          title="هنوز پستی نیست"
-          body="فروشنده‌ها می‌توانند از پنل خود پست بگذارند."
-          actionHref="/vendor"
-          actionLabel="پنل فروشنده"
+          title="خوراک خالی است"
+          body="فروشنده‌ها پست می‌گذارند تا اینجا دیده شوند."
+          actionHref="/map"
+          actionLabel="کشف روی نقشه"
         />
       )}
 
       <section>
         {items.map((item) => (
           <article key={item.id} className="list-card">
-            <Link href={`/vendors/${item.vendorProfileId}`} className="text-accent">
+            <Link href={`/shop/${item.vendorProfileId}`} className="text-accent">
               {item.businessName}
             </Link>
             <p className="mt-2 text-sm leading-7">{item.caption}</p>
@@ -93,10 +96,7 @@ export default function FeedPage() {
       </section>
 
       <Link href="/map" className="btn-secondary">
-        مشاهده نقشه
-      </Link>
-      <Link href="/tour" className="btn-secondary">
-        تور دمو
+        نقشه نزدیک
       </Link>
     </main>
   );

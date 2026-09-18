@@ -6,6 +6,7 @@ import { SWRegister } from './sw-register';
 import { NotificationBell } from '@/components/notification-bell';
 import { ApiStatusChip } from '@/components/api-status';
 import { ThemeBoot } from '@/components/theme-boot';
+import { BottomNav } from '@/components/bottom-nav';
 
 export const metadata: Metadata = {
   title: 'نزدیک استور | NazdikStore',
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </header>
         <div className="brand-bar" aria-hidden />
         {children}
+        <BottomNav />
         <SWRegister />
       </body>
     </html>

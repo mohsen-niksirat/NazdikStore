@@ -3,9 +3,11 @@ import { MapPin, ShieldCheck, Store, Sparkles } from 'lucide-react';
 
 const PATHS = [
   { href: '/map', label: 'نقشه نزدیک', desc: 'فروشنده‌ها و ETA' },
+  { href: '/feed', label: 'خوراک محلی', desc: 'پست‌های اطراف' },
   { href: '/orders', label: 'سفارش‌های من', desc: 'پرداخت و رسید' },
   { href: '/book', label: 'نوبت شمسی', desc: 'رزرو مطب / خدمات' },
   { href: '/cart', label: 'سبد خرید', desc: 'کد تخفیف و پرداخت' },
+  { href: '/shop/vp_food_1', label: 'ویترین نمونه', desc: 'آشپزخانه مادر' },
   { href: '/vendor', label: 'پنل فروشنده', desc: 'محصول و سفارش' },
   { href: '/assistant', label: 'دستیار هوشمند', desc: 'جمله فارسی بگو' },
 ];
