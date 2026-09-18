@@ -49,6 +49,37 @@ export default function CartPage() {
   const [address, setAddress] = useState('تهران');
   const [lastOrder, setLastOrder] = useState<{ id: string; totalToman: number } | null>(null);
   const [lastPayment, setLastPayment] = useState<string | null>(null);
+  const [coupon, setCoupon] = useState('');
+  const [couponMsg, setCouponMsg] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
+  const [freeDelivery, setFreeDelivery] = useState(false);
+
+  const applyCoupon = useCallback(async () => {
+    setCouponMsg(null);
+    const subtotal = cart.reduce((s, l) => s + l.unitPriceToman * l.quantity, 0);
+    const r = await apiFetch<{ ok: boolean; discount: number; freeDelivery: boolean; error?: string }>(
+      '/coupons/validate',
+      {
+        method: 'POST',
+        body: JSON.stringify({ code: coupon, subtotalToman: subtotal }),
+      },
+    );
+    if (!r.ok || !r.data?.ok) {
+      setDiscount(0);
+      setFreeDelivery(false);
+      setCouponMsg(r.data?.error || r.error || 'کد نامعتبر است');
+      return;
+    }
+    setDiscount(r.data.discount);
+    setFreeDelivery(Boolean(r.data.freeDelivery));
+    setCouponMsg(
+      r.data.freeDelivery
+        ? 'ارزانی حمل اعمال شد'
+        : `تخفیف ${r.data.discount.toLocaleString('fa-IR')} تومان اعمال شد`,
+    );
+  }, [coupon, cart]);
+
+  const finalTotal = Math.max(0, total - discount);
 
   useEffect(() => {
     const t = localStorage.getItem(TOKEN_KEY);

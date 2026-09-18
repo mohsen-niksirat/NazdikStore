@@ -60,6 +60,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/map" className="btn-ghost" style={{ minHeight: 36 }}>
                 نقشه
               </Link>
+              <Link href="/assistant" className="btn-ghost" style={{ minHeight: 36 }}>
+                دستیار
+              </Link>
+              <Link href="/settings" className="btn-ghost" style={{ minHeight: 36 }}>
+                تنظیمات
+              </Link>
               <Link href="/profile" className="btn-ghost" style={{ minHeight: 36 }}>
                 پروفایل
               </Link>

@@ -46,18 +46,38 @@ function fmt(n: number) {
 export default function AdminPage() {
   const [user, setUser] = useState<{ id: string; role: string } | null>(null);
   const [overview, setOverview] = useState<Overview | null>(null);
+  const [metrics, setMetrics] = useState<{
+    gmvToman: number;
+    orderCount: number;
+    takeRate: number;
+    aovToman: number;
+    commissionToman: number;
+    series: Array<{ t: string; orders: number; gmv: number }>;
+  } | null>(null);
+  const [fraud, setFraud] = useState<Array<{ key: string; badge?: string; score?: number }>>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     const r = await apiFetch<Overview>('/admin/overview');
-    if (!r.ok) {
-      setErr(r.error || 'بارگذاری کنسول ناموفق');
-      return;
+    if (r.ok && r.data) {
+      setOverview(r.data);
+      setErr(null);
+    } else if (r.error) {
+      setErr(r.error);
     }
-    setOverview(r.data);
-    setErr(null);
+    const m = await apiFetch<{
+      gmvToman: number;
+      orderCount: number;
+      takeRate: number;
+      aovToman: number;
+      commissionToman: number;
+      series: Array<{ t: string; orders: number; gmv: number }>;
+    }>('/admin/metrics');
+    if (m.ok && m.data) setMetrics(m.data);
+    const f = await apiFetch<Array<{ key: string; badge?: string; score?: number }>>('/admin/fraud');
+    if (f.ok && f.data) setFraud(f.data);
   }, []);
 
   useEffect(() => {
@@ -129,6 +149,49 @@ export default function AdminPage() {
         </section>
       ) : (
         <>
+          {metrics && (
+            <section className="card stack-2">
+              <h2 className="h2">شاخص‌های بازار (BI)</h2>
+              <div className="row-between text-sm">
+                <span>GMV</span>
+                <span className="price">{fmt(metrics.gmvToman)}</span>
+              </div>
+              <div className="row-between text-sm">
+                <span>Take rate</span>
+                <span>{(metrics.takeRate * 100).toFixed(1)}%</span>
+              </div>
+              <div className="row-between text-sm">
+                <span>AOV</span>
+                <span>{fmt(metrics.aovToman)}</span>
+              </div>
+              <div className="row-between text-sm">
+                <span>کمیسیون</span>
+                <span>{fmt(metrics.commissionToman)}</span>
+              </div>
+              {metrics.series?.length > 0 && (
+                <div className="caption">
+                  سری: {metrics.series.map((s) => `${s.t}: ${s.orders}`).join(' · ')}
+                </div>
+              )}
+            </section>
+          )}
+
+          {fraud.length > 0 && (
+            <section className="card stack-2">
+              <h2 className="h2">هشدار تقلب</h2>
+              {fraud.map((f) => (
+                <div key={f.key} className="row-between text-sm">
+                  <span className="mono caption" dir="ltr">
+                    {f.key}
+                  </span>
+                  <span className="tag" style={{ background: 'rgba(180,35,24,.12)', color: 'var(--danger)' }}>
+                    {f.badge || 'FLAG'}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+
           {overview && (
             <>
               <section className="card stack-2">
