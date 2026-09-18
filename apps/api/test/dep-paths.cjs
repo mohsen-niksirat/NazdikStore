@@ -46,13 +46,26 @@ function installResolveHook({ root, sharedSrc, apiSrc }) {
 }
 
 function installTsHook() {
-  let ts;
-  try {
-    ts = require('typescript');
-  } catch {
-    const ci = process.env.CI_NODE_MODULES;
-    if (ci) ts = require(path.join(ci, 'typescript'));
-    else throw new Error('typescript not installed');
+  const candidates = [];
+  if (process.env.CI_NODE_MODULES) {
+    candidates.push(path.join(process.env.CI_NODE_MODULES, 'typescript'));
+  }
+  candidates.push('typescript');
+  candidates.push(path.join(__dirname, '..', 'node_modules', 'typescript'));
+  candidates.push(path.join(__dirname, '..', '..', '..', 'node_modules', 'typescript'));
+
+  let ts = null;
+  const errors = [];
+  for (const c of candidates) {
+    try {
+      ts = require(c);
+      break;
+    } catch (e) {
+      errors.push(c + ': ' + e.message);
+    }
+  }
+  if (!ts) {
+    throw new Error('typescript not installed. Tried:\n' + errors.join('\n'));
   }
   Module._extensions['.ts'] = function (mod, filename) {
     const source = fs.readFileSync(filename, 'utf8');
