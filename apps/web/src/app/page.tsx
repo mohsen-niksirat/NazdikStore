@@ -21,6 +21,9 @@ export default function HomePage() {
           <p className="body-muted mt-2">
             با شماره موبایل وارد شوید یا از تور دمو برای بررسی محصول استفاده کنید.
           </p>
+          <div className="alert alert-ok mt-3 text-sm">
+            کد تخفیف امروز: <strong className="mono">PERCENT20</strong> — تا ۵۰ هزار تومان
+          </div>
         </div>
         <div className="btn-row">
           <Link href="/tour" className="btn-primary">

@@ -20,6 +20,7 @@
     "test:phase3": "node apps/api/test/run-phase3.cjs",
     "test:phase4": "node apps/api/test/run-phase4.cjs",
     "test:phase5": "node apps/api/test/run-phase5.cjs",
+    "verify": "npm run verify --workspace=@nazdik/api",
     "test:jest": "npm run test:jest --workspace=@nazdik/api",
     "lint": "npm run lint --workspace=@nazdik/api && npm run lint --workspace=@nazdik/web",
     "docker:up": "docker compose up -d",

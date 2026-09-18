@@ -24,3 +24,7 @@ dev-server.log
 .nestpg/
 apps/api/nest-out.log
 apps/api/nest-err.log
+
+apps/api/data/state.json
+apps/api/*.log
+apps/api/*.err

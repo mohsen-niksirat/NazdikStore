@@ -175,6 +175,37 @@ export default function ProfilePage() {
             </button>
           </section>
 
+          <section className="card stack-3">
+            <h2 className="h2">دفترچه آدرس</h2>
+            <div className="field">
+              <label>برچسب</label>
+              <input className="input-field" defaultValue="خانه" id="addr-label" />
+            </div>
+            <div className="field">
+              <label>نشانی</label>
+              <input
+                className="input-field"
+                placeholder="تهران، خیابان..."
+                id="addr-line"
+              />
+            </div>
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={async () => {
+                const label = (document.getElementById('addr-label') as HTMLInputElement)?.value || 'خانه';
+                const line = (document.getElementById('addr-line') as HTMLInputElement)?.value || '';
+                const r = await apiFetch('/me/addresses', {
+                  method: 'POST',
+                  body: JSON.stringify({ label, line, isDefault: true }),
+                });
+                setMsg(r.ok ? 'آدرس ذخیره شد' : r.error || 'خطا');
+              }}
+            >
+              ذخیره آدرس
+            </button>
+          </section>
+
           <section className="stack-2">
             <Link href="/orders" className="btn-secondary">
               سفارش‌های من

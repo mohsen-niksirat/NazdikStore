@@ -367,6 +367,25 @@ export default function CartPage() {
             <div className="field">
               <label>آدرس تحویل</label>
               <input className="input-field" value={address} onChange={(e) => setAddress(e.target.value)} />
+              <button
+                type="button"
+                className="btn-secondary mt-2"
+                style={{ minHeight: 40 }}
+                onClick={async () => {
+                  const r = await apiFetch<Array<{ id: string; label: string; line: string; isDefault: boolean }>>(
+                    '/me/addresses',
+                  );
+                  if (!r.ok || !r.data?.length) {
+                    setCouponMsg('هنوز آدرسی ذخیره نشده — از پروفایل اضافه کنید');
+                    return;
+                  }
+                  const def = r.data.find((a) => a.isDefault) || r.data[0];
+                  setAddress(`${def.line} (${def.label})`);
+                  setCouponMsg('آدرس پیش‌فرض انتخاب شد');
+                }}
+              >
+                انتخاب از دفترچه آدرس
+              </button>
             </div>
             <button type="button" className="btn-primary" disabled={busy} onClick={() => void checkout()}>
               {busy ? <Loader2 style={{ width: 16, height: 16 }} aria-hidden /> : null}

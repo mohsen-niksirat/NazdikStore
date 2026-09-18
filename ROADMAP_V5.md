@@ -4,14 +4,16 @@ See full research: `docs/RESEARCH_V5.md`
 
 | Phase | Status | Deliverable |
 |---|---|---|
-| P19 Order command center | **in progress** | `/orders` full lifecycle actions |
-| P20 Trust | pending | Vendor hours, reviews on profile, privacy FAQ |
-| P21 Catalog media | pending | Product image upload UI |
-| P22 Data persistence | pending | JSON store + `npm run verify` |
-| P23 Address book | pending | Simple Iranian address on checkout |
-| P24 Growth | pending | Referral campaign page + home banner |
-| P25 Courier/RFQ UI | pending | Courier job list + RFQ accept UX |
-| P26 Go-live docs | pending | `docs/GO_LIVE.md` checklist (no live deploy yet) |
+| P19 Order command center | ✅ | `/orders` pay/chat/track/receipt/dispute |
+| P20 Trust | ✅ | Vendor hours open-now + privacy + review summary |
+| P21 Catalog media | ✅ | Product image upload UI (JPEG/PNG ≤5MB, polyglot reject) |
+| P22 Data persistence | ✅ | JSON autosave + `npm run verify` |
+| P23 Address book | ✅ | `/me/addresses` + profile + cart picker |
+| P24 Growth | ✅ | Home coupon banner + referral code API |
+| P25 Courier/RFQ UI APIs | ✅ | `/courier/jobs` + `/rfq/open` + accept |
+| P26 Go-live docs | ✅ | `docs/GO_LIVE.md` checklist |
+
+**Online deploy remains last** (user deferred).
 
 Online **deploy stays last** (user deferred).
 

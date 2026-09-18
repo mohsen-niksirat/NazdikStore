@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { ProductImageField } from '@/components/product-image-field';
 
 const TOKEN_KEY = 'nazdik_token';
 const USER_KEY = 'nazdik_user';
@@ -240,10 +241,11 @@ export default function VendorBoardPage() {
         <h2 className="h2">موجودی منو</h2>
         {products.length === 0 && <p className="body-muted">محصولی ثبت نشده است.</p>}
         {products.map((p) => (
-          <div key={p.id} className="row-between">
-            <div>
+          <div key={p.id} className="row-between stack-2" style={{ flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 140 }}>
               <strong className="text-sm">{p.title}</strong>
               <div className="caption">{p.faStock}</div>
+              <ProductImageField productId={p.id} />
             </div>
             <button
               type="button"

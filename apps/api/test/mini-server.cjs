@@ -222,6 +222,36 @@ function main() {
     console.warn('p20-routes not attached:', (err && err.message) || err);
   }
   try {
+    const { attachP21Routes } = require('./p21-routes.cjs');
+    attachP21Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p21-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachP22Routes } = require('./p22-routes.cjs');
+    attachP22Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p22-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachP23Routes } = require('./p23-routes.cjs');
+    attachP23Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p23-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachP24Routes } = require('./p24-routes.cjs');
+    attachP24Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p24-routes not attached:', (err && err.message) || err);
+  }
+  try {
+    const { attachP25Routes } = require('./p25-routes.cjs');
+    attachP25Routes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('p25-routes not attached:', (err && err.message) || err);
+  }
+  try {
     const { attachTrackingRoutes } = require('./phase11-routes.cjs');
     attachTrackingRoutes(ctx, match, json, readBody, authUser);
   } catch (err) {
