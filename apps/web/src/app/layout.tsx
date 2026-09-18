@@ -46,6 +46,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               نزدیک استور
             </Link>
             <div className="flex items-center gap-2">
+              <Link href="/tour" className="btn-ghost" style={{ minHeight: 36 }}>
+                تور
+              </Link>
               <Link href="/map" className="btn-ghost" style={{ minHeight: 36 }}>
                 نقشه
               </Link>

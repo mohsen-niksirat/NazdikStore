@@ -19,42 +19,18 @@ export default function HomePage() {
         <div>
           <h2 className="h1">شروع کنید</h2>
           <p className="body-muted mt-2">
-            با شماره موبایل وارد شوید. کد تایید پیامک می‌شود — بدون رمز عبور.
+            با شماره موبایل وارد شوید یا از تور دمو برای بررسی محصول استفاده کنید.
           </p>
         </div>
         <div className="btn-row">
-          <Link href="/auth" className="btn-primary">
+          <Link href="/tour" className="btn-primary">
+            تور دمو (برای بررسی)
+          </Link>
+          <Link href="/auth" className="btn-secondary">
             ورود / ثبت‌نام
           </Link>
           <Link href="/map" className="btn-secondary">
             مشاهده نقشه نزدیک
-          </Link>
-          <Link href="/feed" className="btn-secondary">
-            خوراک محلی
-          </Link>
-          <Link href="/vendor" className="btn-secondary">
-            پنل فروشنده
-          </Link>
-          <Link href="/cart" className="btn-secondary">
-            سبد خرید
-          </Link>
-          <Link href="/admin" className="btn-secondary">
-            کنسول ادمین
-          </Link>
-          <Link href="/messages" className="btn-secondary">
-            پیام‌ها و اعلان‌ها
-          </Link>
-          <Link href="/book" className="btn-secondary">
-            نوبت و درخواست خدمت
-          </Link>
-          <Link href="/rfq" className="btn-secondary">
-            پیشنهادهای خدمت
-          </Link>
-          <Link href="/orders" className="btn-secondary">
-            سفارش‌های من
-          </Link>
-          <Link href="/profile" className="btn-secondary">
-            پروفایل من
           </Link>
         </div>
       </section>
@@ -72,6 +48,36 @@ export default function HomePage() {
           <MapPin aria-hidden />
           <span>مکان خانگی فروشنده‌ها مبهم‌سازی می‌شود (۲۰۰ متر)</span>
         </div>
+      </section>
+
+      <section className="stack-2">
+        <Link href="/feed" className="btn-secondary">
+          خوراک محلی
+        </Link>
+        <Link href="/vendor" className="btn-secondary">
+          پنل فروشنده
+        </Link>
+        <Link href="/cart" className="btn-secondary">
+          سبد خرید
+        </Link>
+        <Link href="/admin" className="btn-secondary">
+          کنسول ادمین
+        </Link>
+        <Link href="/messages" className="btn-secondary">
+          پیام‌ها و اعلان‌ها
+        </Link>
+        <Link href="/book" className="btn-secondary">
+          نوبت و درخواست خدمت
+        </Link>
+        <Link href="/rfq" className="btn-secondary">
+          پیشنهادهای خدمت
+        </Link>
+        <Link href="/orders" className="btn-secondary">
+          سفارش‌های من
+        </Link>
+        <Link href="/profile" className="btn-secondary">
+          پروفایل من
+        </Link>
       </section>
 
       <p className="footer-note">NazdikStore · hyperlocal marketplace</p>

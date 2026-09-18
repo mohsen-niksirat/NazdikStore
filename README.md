@@ -2,8 +2,11 @@
 
 Hyperlocal multi-vendor marketplace for the Iranian market.
 
-**Public repo** — friends can review, clone, and comment:  
+**Public repo** — friends welcome to review:  
 https://github.com/mohsen-niksirat/NazdikStore
+
+**شروع بررسی:** [REVIEW_GUIDE.md](REVIEW_GUIDE.md) · [تور دمو در سایت](apps/web/src/app/tour/page.tsx) (`/tour`)  
+Issue template: **First-look checklist**
 
 ## Release map
 
@@ -15,6 +18,8 @@ https://github.com/mohsen-niksirat/NazdikStore
 | **v0.8.0** | Admin console |
 | **v0.9.0** | Order chat + notifications |
 | **v1.0.0** | PWA install, release checklist |
+| **v1.3–1.7** | RFQ, profile, admin data, map deep-link |
+| **v1.8–1.9** | Friend review kit + in-app demo tour |
 
 ## How to run (local demo)
 
