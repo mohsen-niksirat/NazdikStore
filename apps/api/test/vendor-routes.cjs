@@ -5,8 +5,23 @@
 const path = require('path');
 
 function attachVendorRoutes(ctx, match, json, readBody, authUser) {
+  function devLoginDisabled() {
+    const nodeEnv = process.env.NODE_ENV || '';
+    return nodeEnv === 'production' || process.env.ALLOW_DEV_LOGIN === '0';
+  }
+
   // Demo vendor session: POST /auth/dev-login { role, id }
+  // DISABLED in production (NODE_ENV=production or ALLOW_DEV_LOGIN=0)
   match('POST', '/auth/dev-login', async (req, res) => {
+    if (devLoginDisabled()) {
+      return json(res, 403, {
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'dev-login disabled in production — use SMS OTP',
+        },
+      });
+    }
     const body = await readBody(req);
     const role = body.role === 'VENDOR' ? 'VENDOR' : body.role === 'ADMIN' ? 'ADMIN' : 'CONSUMER';
     const id = body.id || (role === 'VENDOR' ? 'vendor_demo' : role === 'ADMIN' ? 'admin_demo' : 'consumer_demo');

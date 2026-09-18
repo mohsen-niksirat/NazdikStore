@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install minimal test deps
+        working-directory: apps/api
+        run: |
+          npm install typescript @nestjs/jwt @nestjs/common @nestjs/testing @nestjs/core @nestjs/passport passport passport-jwt class-validator class-transformer ioredis reflect-metadata rxjs helmet --no-save --registry https://registry.npmjs.org
+
+      - name: Phase 1–5 + prod guards
+        working-directory: apps/api
+        run: |
+          node test/run-phase1.cjs
+          node test/run-phase2.cjs
+          node test/run-phase3.cjs
+          node test/run-phase4.cjs
+          node test/run-phase5.cjs
+          node test/run-prod-guards.cjs
+
+      - name: Start mini API & smoke
+        working-directory: apps/api
+        run: |
+          node test/mini-server.cjs &
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            curl -sf http://127.0.0.1:4000/api/v1/health && break
+            sleep 2
+          done
+          node test/run-phase6.cjs
+          node test/run-phase9.cjs
+
+      - name: Secret / gitignore hygiene
+        run: |
+          test ! -f .env
+          grep -q '^\.env$' .gitignore
+          echo OK

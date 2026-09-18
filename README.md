@@ -47,14 +47,20 @@ OTP codes print in the API terminal as `[SMS] …`.
 
 ## Production checklist
 
-- [ ] `docker compose up -d postgres redis`
-- [ ] `cd apps/api && npx prisma migrate deploy && npx prisma generate`
-- [ ] Set `JWT_ACCESS_SECRET`, `PAYMENT_HMAC_SECRET`, `PAYMENT_PROVIDER`, `CORS_ORIGINS`
-- [ ] Replace `SMS_PROVIDER=console` with Kavenegar / SMS.ir
-- [ ] Real Zarinpal/Saman credentials
-- [ ] HTTPS + reverse proxy (CSP already in `main.ts`)
-- [ ] Full Nest path: `npm run dev:nest` after complete `npm install`
-- [ ] Disable `dev-login` and mini-server in production
+- [ ] Copy `.env.production.example` → `.env` (never commit `.env`)
+- [ ] `ALLOW_DEV_LOGIN=0` and `NODE_ENV=production` (dev-login API returns 403)
+- [ ] `SMS_PROVIDER=kavenegar` or `smsir` + API key
+- [ ] `PAYMENT_PROVIDER=zarinpal` or `saman` + `PAYMENT_HMAC_SECRET` + merchant key
+- [ ] Docker: `docker compose up -d postgres redis` then `prisma migrate deploy`
+- [ ] HTTPS + reverse proxy (CSP in Nest `main.ts`)
+- [ ] Full Nest path when npm install is complete: `npm run dev:nest`
+- [ ] CI green on GitHub Actions (`.github/workflows/ci.yml`)
+
+## For reviewers (public repo)
+
+- Clone, run demo (API + web), open issues via templates
+- `CONTRIBUTING.md` has the review path
+- Tags: `v0.6.0` … `v1.0.0`
 
 ## Tests
 
