@@ -42,6 +42,24 @@ node apps/api/test/run-prod-phase9-10.cjs
 Production compose: `docker-compose.prod.yml`  
 Backup: `scripts/backup-postgres.sh`
 
+## Nest process (this machine, no Docker)
+
+```bat
+:: optional embedded Postgres (Windows — can be unstable)
+node scripts\postgres-migrate.cjs
+
+:: real Nest HTTP process on :4100
+node scripts\nest-direct.cjs
+
+:: health
+curl http://127.0.0.1:4100/api/v1/health
+```
+
+- **Nest:** `scripts/nest-direct.cjs` → NestFactory from `apps/api`  
+- **Postgres:** embedded binaries under `.nestpg/` port **5433** (if it stays up)  
+- **Docker path:** `docs/NEST_POSTGRES.md` + `docker-compose.prod.yml`  
+- **Demo API (stable):** `cd apps/api && npm run dev` → **:4000**
+
 ## How to run (local demo)
 
 ```bat
