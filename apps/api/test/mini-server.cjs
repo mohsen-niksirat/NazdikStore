@@ -436,9 +436,9 @@ function main() {
     if (err && err.code === 'EADDRINUSE') {
       console.error(`\nPort ${port} is already in use.`);
       console.error('Fix options:');
-      console.error(`  1) Stop the other process:  netstat -ano | findstr :${port}`);
-      console.error(`     then:  taskkill /PID <pid> /F`);
-      console.error(`  2) Start on another port:   set PORT=4001 && npm run dev`);
+      console.error(`  1) npm run dev   (auto-frees :${port})`);
+      console.error(`  2) node scripts/free-port.cjs ${port}`);
+      console.error(`  3) set PORT=4001 && npm run dev`);
       process.exit(1);
     }
     console.error(err);

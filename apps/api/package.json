@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node test/mini-server.cjs",
-    "dev:api": "nest start --watch",
+    "dev": "node ../..\\scripts\\free-port.cjs 4000 && node test/mini-server.cjs",
+    "dev:api": "node ../../scripts/free-port.cjs 4000 && nest start --watch",
     "dev:nest": "nest start --watch",
-    "start:local": "node test/mini-server.cjs",
+    "start:local": "node ../../scripts/free-port.cjs 4000 && node test/mini-server.cjs",
     "build": "nest build",
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
