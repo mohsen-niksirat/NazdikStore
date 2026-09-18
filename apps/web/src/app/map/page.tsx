@@ -1,22 +1,22 @@
 'use client';
 
 /**
- * NazdikStore hyperlocal map — Phase 2.
- * Uses MapLibre GL when the package loads; otherwise a self-contained
- * equirectangular canvas map (offline-friendly, no CDN required).
+ * NazdikStore map — Phase 2.
+ * Canvas equirectangular map (no tile server required) + radius filters.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
 import {
   DEFAULT_MAP_CENTER,
   RADIUS_PRESETS_KM,
   VENDOR_TYPES,
-  formatIrMobileDisplay,
   type MapFeature,
   type MapVendorMarker,
 } from '@nazdik/shared';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
 
 type VendorType = (typeof VENDOR_TYPES)[number];
 
@@ -55,7 +55,7 @@ function formatDistance(m: number | null): string {
 export default function MapPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [center, setCenter] = useState(DEFAULT_MAP_CENTER);
-  const [radiusKm, setRadiusKm] = useState<number>(3);
+  const [radiusKm, setRadiusKm] = useState(3);
   const [vendorType, setVendorType] = useState<VendorType | ''>('');
   const [zoom, setZoom] = useState(13);
   const [data, setData] = useState<MapApiResponse | null>(null);
@@ -63,18 +63,15 @@ export default function MapPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [geoState, setGeoState] = useState<'idle' | 'loading' | 'ok' | 'denied'>('idle');
-  const [maplibreReady, setMaplibreReady] = useState(false);
-  const maplibreMapRef = useRef<unknown>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Project lat/lng → canvas pixels (local equirectangular)
   const project = useCallback(
     (lat: number, lng: number, w: number, h: number) => {
       const latSpan = 0.04 * Math.pow(2, (13 - zoom) * 0.35);
       const lngSpan = latSpan * 1.4;
       const x = ((lng - (center.lng - lngSpan / 2)) / lngSpan) * w;
       const y = (1 - (lat - (center.lat - latSpan / 2)) / latSpan) * h;
-      return { x, y, latSpan, lngSpan };
+      return { x, y };
     },
     [center, zoom],
   );
@@ -94,7 +91,6 @@ export default function MapPage() {
       const res = await fetch(`${API_URL}/api/v1/map/vendors?${qs.toString()}`);
       const body = await res.json();
       if (!res.ok || !body.success) {
-        // Offline demo payload when API is down
         setData(demoResponse(center, radiusKm));
         setError('نمایش داده‌های نمونه (سرور در دسترس نیست)');
         return;
@@ -108,24 +104,22 @@ export default function MapPage() {
     }
   }, [center, radiusKm, vendorType, zoom]);
 
-  // Debounced refetch on filter change
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       void fetchMap();
-    }, 350);
+    }, 300);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, [fetchMap]);
 
-  // Draw canvas map
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const parent = canvas.parentElement;
     const w = parent?.clientWidth ?? 360;
-    const h = 340;
+    const h = 300;
     canvas.width = w * 2;
     canvas.height = h * 2;
     canvas.style.width = `${w}px`;
@@ -134,63 +128,62 @@ export default function MapPage() {
     if (!ctx) return;
     ctx.scale(2, 2);
 
-    // Paper background + grid
+    // soft paper + subtle grid
     ctx.fillStyle = '#F7F4EF';
     ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = '#E2DDD4';
+    ctx.strokeStyle = 'rgba(226, 221, 212, 0.9)';
     ctx.lineWidth = 1;
-    for (let i = 0; i < w; i += 28) {
+    for (let i = 0; i < w; i += 24) {
       ctx.beginPath();
       ctx.moveTo(i, 0);
       ctx.lineTo(i, h);
       ctx.stroke();
     }
-    for (let j = 0; j < h; j += 28) {
+    for (let j = 0; j < h; j += 24) {
       ctx.beginPath();
       ctx.moveTo(0, j);
       ctx.lineTo(w, j);
       ctx.stroke();
     }
 
-    // Radius circle
     const c = project(center.lat, center.lng, w, h);
-    const edge = project(center.lat + (radiusKm / 111.32), center.lng, w, h);
-    const rPx = Math.abs(edge.y - c.y);
+    const edge = project(center.lat + radiusKm / 111.32, center.lng, w, h);
+    const rPx = Math.max(28, Math.abs(edge.y - c.y));
+
     ctx.beginPath();
-    ctx.arc(c.x, c.y, Math.max(20, rPx), 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(15, 107, 92, 0.08)';
+    ctx.arc(c.x, c.y, rPx, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(15, 107, 92, 0.07)';
     ctx.fill();
-    ctx.strokeStyle = '#0F6B5C';
-    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(15, 107, 92, 0.45)';
+    ctx.setLineDash([5, 5]);
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // User center
+    // center pin
     ctx.beginPath();
-    ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);
+    ctx.arc(c.x, c.y, 7, 0, Math.PI * 2);
     ctx.fillStyle = '#0F6B5C';
     ctx.fill();
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    const features = data?.features ?? [];
-    for (const f of features) {
+    for (const f of data?.features ?? []) {
       if (f.type === 'cluster') {
         const p = project(f.lat, f.lng, w, h);
-        const rr = Math.min(28, 12 + Math.log2(f.count + 1) * 4);
+        const rr = Math.min(26, 12 + Math.log2(f.count + 1) * 3.5);
         ctx.beginPath();
         ctx.arc(p.x, p.y, rr, 0, Math.PI * 2);
-        ctx.fillStyle = TYPE_COLORS.cluster;
+        ctx.fillStyle = '#1C2421';
         ctx.fill();
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px sans-serif';
+        ctx.font = 'bold 12px Tahoma, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(String(f.count), p.x, p.y);
       } else {
         const p = project(f.displayLat, f.displayLng, w, h);
-        // Fuzzy polygon
         if (f.fuzzyPolygon) {
           const ring = f.fuzzyPolygon.coordinates[0];
           ctx.beginPath();
@@ -200,37 +193,36 @@ export default function MapPage() {
             else ctx.lineTo(pt.x, pt.y);
           });
           ctx.closePath();
-          ctx.fillStyle = 'rgba(196, 146, 42, 0.18)';
+          ctx.fillStyle = 'rgba(196, 146, 42, 0.12)';
           ctx.fill();
-          ctx.strokeStyle = 'rgba(196, 146, 42, 0.55)';
-          ctx.lineWidth = 1;
+          ctx.strokeStyle = 'rgba(196, 146, 42, 0.45)';
+          ctx.lineWidth = 1.2;
           ctx.stroke();
         }
         const color = TYPE_COLORS[f.vendorType] ?? '#0F6B5C';
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, 9, 0, Math.PI * 2);
         ctx.fillStyle = f.isHomeBased ? '#C4922A' : color;
         ctx.fill();
         ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.5;
         ctx.stroke();
         if (selected && selected.id === f.id) {
           ctx.beginPath();
-          ctx.arc(p.x, p.y, 12, 0, Math.PI * 2);
+          ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
           ctx.strokeStyle = '#0F6B5C';
-          ctx.lineWidth = 2;
+          ctx.lineWidth = 2.5;
           ctx.stroke();
         }
       }
     }
 
-    // Click hit-test
     const onClick = (ev: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const mx = ev.clientX - rect.left;
       const my = ev.clientY - rect.top;
       let best: MapVendorMarker | null = null;
-      let bestD = 16;
+      let bestD = 18;
       for (const f of data?.features ?? []) {
         if (f.type === 'cluster') continue;
         const p = project(f.displayLat, f.displayLng, w, h);
@@ -243,29 +235,10 @@ export default function MapPage() {
       setSelected(best);
     };
     canvas.onclick = onClick;
-
     return () => {
       canvas.onclick = null;
     };
   }, [data, center, radiusKm, zoom, project, selected]);
-
-  // Optional MapLibre enhancement when package exists
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const mod = await import('maplibre-gl').catch(() => null);
-        if (!mod || cancelled) return;
-        setMaplibreReady(true);
-        // MapLibre map is an optional upgrade; canvas remains source of truth for offline.
-      } catch {
-        /* keep canvas */
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const askGeolocation = useCallback(() => {
     if (!('geolocation' in navigator)) {
@@ -284,35 +257,32 @@ export default function MapPage() {
   }, []);
 
   const vendorFeatures = useMemo(
-    () => (data?.features ?? []).filter((f): f is { type: 'vendor' } & MapVendorMarker => f.type === 'vendor'),
+    () =>
+      (data?.features ?? []).filter(
+        (f): f is { type: 'vendor' } & MapVendorMarker => f.type === 'vendor',
+      ),
     [data],
   );
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-auth flex-col gap-4 px-4 py-6">
-      <header className="flex items-start justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-bold">نقشه نزدیک</h1>
-          <p className="mt-1 text-xs text-ink-muted">
-            فروشنده‌ها در شعاع انتخابی · مکان خانگی مبهم‌سازی می‌شود
-          </p>
+    <main className="page">
+      <div className="top-nav">
+        <div className="brand">
+          <h1 className="h1">نقشه نزدیک</h1>
+          <p className="caption">فروشنده‌ها در شعاع انتخابی · مکان خانگی مبهم</p>
         </div>
-        <a href="/" className="text-sm text-accent hover:underline">
+        <Link href="/" className="btn-ghost">
           خانه
-        </a>
-      </header>
+        </Link>
+      </div>
 
-      <section className="card-auth space-y-3 !p-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <section className="card stack-3">
+        <div className="radius-row" role="group" aria-label="شعاع">
           {RADIUS_PRESETS_KM.map((r) => (
             <button
               key={r}
               type="button"
-              className={`min-h-[36px] rounded-full border px-3 text-xs font-medium ${
-                radiusKm === r
-                  ? 'border-accent bg-accent-soft text-accent'
-                  : 'border-line bg-white text-ink'
-              }`}
+              className={`pill${radiusKm === r ? ' active' : ''}`}
               onClick={() => setRadiusKm(r)}
             >
               {r} کیلومتر
@@ -322,7 +292,7 @@ export default function MapPage() {
 
         <div className="flex gap-2">
           <select
-            className="input-field min-h-[40px] flex-1 text-sm"
+            className="input-field"
             value={vendorType}
             onChange={(e) => setVendorType(e.target.value as VendorType | '')}
             aria-label="نوع فروشنده"
@@ -336,117 +306,100 @@ export default function MapPage() {
           </select>
           <button
             type="button"
-            className="min-h-[40px] rounded-control border border-accent bg-accent-soft px-3 text-xs font-medium text-accent"
+            className="btn-secondary"
+            style={{ width: 'auto', minWidth: 120, flexShrink: 0 }}
             onClick={askGeolocation}
           >
-            {geoState === 'loading' ? '…' : geoState === 'ok' ? 'موقعیت شما' : 'موقعیت من'}
+            {geoState === 'loading' ? '…' : 'موقعیت من'}
           </button>
         </div>
 
-        <div className="relative overflow-hidden rounded-card border border-line bg-paper">
-          <canvas ref={canvasRef} className="block w-full" aria-label="نقشه فروشندگان نزدیک" />
+        <div className="map-shell">
+          <canvas ref={canvasRef} aria-label="نقشه فروشندگان نزدیک" />
           {loading && (
-            <div className="absolute inset-x-0 bottom-0 bg-white/80 px-3 py-1 text-center text-xs text-ink-muted">
+            <div
+              style={{
+                position: 'absolute',
+                insetInline: 0,
+                bottom: 0,
+                background: 'rgba(255,255,255,0.85)',
+                padding: '4px 10px',
+                fontSize: 12,
+                color: '#5C6B66',
+                textAlign: 'center',
+              }}
+            >
               در حال بارگذاری…
             </div>
           )}
         </div>
 
         {error && (
-          <p role="status" className="text-xs text-danger">
+          <div className="alert alert-muted" role="status">
             {error}
-          </p>
+          </div>
         )}
 
-        {geoState === 'denied' && (
-          <p className="text-xs text-ink-muted">
-            دسترسی موقعیت رد شد — می‌توانید شعاع را دستی انتخاب کنید.
-          </p>
-        )}
-
-        <div className="flex items-center justify-between text-xs text-ink-muted">
+        <div className="flex justify-between items-center text-xs text-muted">
           <span>
-            {data?.total ?? 0} فروشنده{data?.clustered ? ' (خوشه‌بندی شده)' : ''}
+            {data?.total ?? 0} فروشنده{data?.clustered ? ' · خوشه‌بندی' : ''}
           </span>
-          <span>
-            حریم خصوصی: مبهم‌سازی {data?.privacy?.fuzzyRadiusMeters ?? 200} متری خانگی
-            {maplibreReady ? ' · MapLibre آماده' : ''}
-          </span>
+          <span>حریم خصوصی خانگی: {data?.privacy?.fuzzyRadiusMeters ?? 200} متر</span>
         </div>
       </section>
 
-      {/* Bottom-sheet preview */}
-      <section className="card-auth space-y-2" aria-live="polite">
-        <h2 className="text-sm font-bold">
-          {selected ? 'پیش‌نمایش فروشنده' : 'نزدیک‌ترین‌ها'}
-        </h2>
+      <section className="card stack-3" aria-live="polite">
+        <h2 className="h2">{selected ? 'پیش‌نمایش فروشنده' : 'نزدیک‌ترین‌ها'}</h2>
         {selected ? (
-          <div className="space-y-2">
-            <div className="text-base font-bold">{selected.businessName}</div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-accent-soft px-2 py-0.5 text-accent">
-                {TYPE_LABELS[selected.vendorType] ?? selected.vendorType}
-              </span>
-              {selected.isHomeBased && (
-                <span className="rounded-full bg-gold/15 px-2 py-0.5 text-gold">خانگی · مبهم</span>
-              )}
-              <span className="text-ink-muted">{formatDistance(selected.distanceMeters)}</span>
+          <div className="stack-2">
+            <div className="h2">{selected.businessName}</div>
+            <div className="flex flex-wrap gap-2">
+              <span className="tag">{TYPE_LABELS[selected.vendorType] ?? selected.vendorType}</span>
+              {selected.isHomeBased && <span className="tag tag-gold">خانگی · مبهم</span>}
+              <span className="caption">{formatDistance(selected.distanceMeters)}</span>
             </div>
-            {selected.description && (
-              <p className="text-sm text-ink-muted">{selected.description}</p>
-            )}
-            {selected.address && (
-              <p className="text-xs text-ink-muted">{selected.address}</p>
-            )}
+            {selected.description && <p className="body-muted">{selected.description}</p>}
+            {selected.address && <p className="caption">{selected.address}</p>}
             {selected.isHomeBased && (
-              <p className="text-xs text-gold">
+              <div className="alert alert-muted">
                 مختصات دقیق تا تایید سفارش نمایش داده نمی‌شود.
-              </p>
+              </div>
             )}
-            <button
-              type="button"
-              className="btn-primary !min-h-[40px] text-sm"
-              onClick={() => setSelected(null)}
-            >
+            <button type="button" className="btn-secondary" onClick={() => setSelected(null)}>
               بستن
             </button>
           </div>
         ) : vendorFeatures.length === 0 ? (
-          <p className="text-sm text-ink-muted">فروشنده‌ای در این محدوده یافت نشد.</p>
+          <p className="body-muted">فروشنده‌ای در این محدوده یافت نشد.</p>
         ) : (
-          <ul className="max-h-56 space-y-2 overflow-y-auto">
+          <div className="vendor-list">
             {vendorFeatures.map((v) => (
-              <li key={v.id}>
-                <button
-                  type="button"
-                  className="w-full rounded-control border border-line bg-white px-3 py-2 text-right hover:border-accent"
-                  onClick={() => setSelected(v)}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-medium">{v.businessName}</span>
-                    <span className="text-xs text-ink-muted">
-                      {formatDistance(v.distanceMeters)}
-                    </span>
-                  </div>
-                  <div className="mt-0.5 text-xs text-ink-muted">
-                    {TYPE_LABELS[v.vendorType] ?? v.vendorType}
-                    {v.isHomeBased ? ' · خانگی' : ''}
-                  </div>
-                </button>
-              </li>
+              <button
+                key={v.id}
+                type="button"
+                className="vendor-item"
+                onClick={() => setSelected(v)}
+              >
+                <strong>{v.businessName}</strong>
+                <div className="vendor-meta">
+                  <span className="tag">{TYPE_LABELS[v.vendorType] ?? v.vendorType}</span>
+                  {v.isHomeBased && <span className="tag tag-gold">خانگی</span>}
+                  <span>{formatDistance(v.distanceMeters)}</span>
+                </div>
+              </button>
             ))}
-          </ul>
+          </div>
         )}
       </section>
 
-      <p className="text-center text-[10px] text-ink-muted">
-        NazdikStore · Phase 2 map engine
+      <p className="footer-note">
+        <MapPin style={{ width: 12, height: 12, verticalAlign: 'middle' }} aria-hidden /> NazdikStore
+        map engine
       </p>
     </main>
   );
 }
 
-/** Offline demo when API is unreachable */
 function demoResponse(center: { lat: number; lng: number }, radiusKm: number): MapApiResponse {
   const demos = [
     { id: 'd1', name: 'آشپزخانه مادر', type: 'FOOD', lat: center.lat + 0.004, lng: center.lng + 0.003, home: true, dist: 650 },
@@ -484,10 +437,7 @@ function demoResponse(center: { lat: number; lng: number }, radiusKm: number): M
               coordinates: [
                 Array.from({ length: 13 }, (_, i) => {
                   const th = (i / 12) * Math.PI * 2;
-                  return [
-                    displayLng + (0.0018 * Math.sin(th)),
-                    displayLat + (0.0018 * Math.cos(th)),
-                  ];
+                  return [displayLng + 0.0018 * Math.sin(th), displayLat + 0.0018 * Math.cos(th)];
                 }),
               ],
             }

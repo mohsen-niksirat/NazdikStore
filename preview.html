@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>نزدیک استور — پیش‌نمایش</title>
+  <style>
+    :root {
+      --paper: #f7f4ef; --ink: #1c2421; --muted: #5c6b66;
+      --accent: #0f6b5c; --soft: #d8ece7; --gold: #c4922a; --line: #e2ddd4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: Tahoma, "Segoe UI", sans-serif;
+      background: var(--paper); color: var(--ink); line-height: 1.7;
+    }
+    .wrap { max-width: 420px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 1.4rem; margin: 0 0 4px; }
+    .chip {
+      display: inline-block; background: var(--soft); color: var(--accent);
+      border-radius: 999px; padding: 4px 12px; font-size: 12px; margin-bottom: 16px;
+    }
+    .card {
+      background: #fff; border: 1px solid var(--line); border-radius: 12px;
+      padding: 14px; margin-bottom: 12px;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 0.95rem; color: var(--muted); font-weight: 600; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-height: 44px; width: 100%; border: none; border-radius: 10px;
+      background: var(--accent); color: #fff; font-size: 15px; cursor: pointer;
+      font-family: inherit; margin-top: 8px;
+    }
+    .btn.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    input, select {
+      width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 10px;
+      padding: 0 12px; font-family: inherit; font-size: 15px; background: #fff;
+    }
+    input[dir="ltr"] { font-family: Consolas, monospace; text-align: left; }
+    label { display: block; font-size: 13px; margin-bottom: 6px; }
+    .row { margin-bottom: 10px; }
+    .status { font-size: 13px; color: var(--muted); white-space: pre-wrap; word-break: break-all; }
+    .ok { color: var(--accent); }
+    .err { color: #b42318; }
+    .tag {
+      display: inline-block; background: var(--soft); color: var(--accent);
+      border-radius: 999px; padding: 2px 8px; font-size: 11px; margin-left: 4px;
+    }
+    .home { background: rgba(196,146,42,.15); color: var(--gold); }
+    .item { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 8px; }
+    .item:first-of-type { border-top: none; margin-top: 0; padding-top: 0; }
+    .muted { color: var(--muted); font-size: 12px; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>نزدیک استور</h1>
+    <div class="chip">فروشگاه‌های نزدیک شما · پیش‌نمایش محلی</div>
+
+    <div class="card">
+      <h2>وضعیت API</h2>
+      <div id="health" class="status">در حال بررسی…</div>
+      <button class="btn secondary" type="button" onclick="checkHealth()">بررسی سلامت</button>
+    </div>
+
+    <div class="card">
+      <h2>۱) ورود با پیامک</h2>
+      <div class="row">
+        <label for="phone">شماره موبایل</label>
+        <input id="phone" dir="ltr" value="09123456789" inputmode="tel" />
+      </div>
+      <button class="btn" type="button" onclick="requestOtp()" id="btnOtp">ارسال کد تایید</button>
+      <div id="otpResult" class="status"></div>
+      <div class="row" id="otpRow" style="display:none;margin-top:10px">
+        <label for="code">کد تایید (از لاگ API بخوانید)</label>
+        <input id="code" dir="ltr" inputmode="numeric" maxlength="5" placeholder="12345" />
+      </div>
+      <button class="btn" type="button" id="btnVerify" style="display:none" onclick="verifyOtp()">ورود</button>
+      <div id="authResult" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>۲) نقشه نزدیک</h2>
+      <div class="row">
+        <label for="radius">شعاع (کیلومتر)</label>
+        <select id="radius" onchange="loadMap()">
+          <option value="1">۱</option>
+          <option value="3" selected>۳</option>
+          <option value="5">۵</option>
+          <option value="10">۱۰</option>
+        </select>
+      </div>
+      <button class="btn secondary" type="button" onclick="loadMap()">بارگذاری فروشنده‌ها</button>
+      <div id="map" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>۳) خوراک محلی</h2>
+      <button class="btn secondary" type="button" onclick="loadFeed()">نمایش پست‌ها</button>
+      <div id="feed" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>۴) پروفایل فروشنده نمونه</h2>
+      <button class="btn secondary" type="button" onclick="loadProfile()">آشپزخانه مادر</button>
+      <div id="profile" class="status"></div>
+    </div>
+
+    <div class="card">
+      <h2>Next.js UI (اختیاری)</h2>
+      <div class="status">
+        اگر Next بالا آمده باشد:<br />
+        <a href="http://127.0.0.1:3300" target="_blank">http://127.0.0.1:3300</a><br />
+        <span class="muted">پورت ۳۰۰۰ روی ویندوز شما رزرو Hyper-V است و قابل استفاده نیست.</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = "http://127.0.0.1:4000/api/v1";
+    let accessToken = null;
+
+    function show(id, html, cls) {
+      const el = document.getElementById(id);
+      el.className = "status" + (cls ? " " + cls : "");
+      el.innerHTML = html;
+    }
+
+    async function req(path, options) {
+      const res = await fetch(API + path, options);
+      const body = await res.json().catch(() => ({}));
+      return { ok: res.ok, status: res.status, body };
+    }
+
+    async function checkHealth() {
+      show("health", "…");
+      try {
+        const r = await req("/health");
+        if (r.ok) {
+          show("health", "API آنلاین روی پورت ۴۰۰۰\n" + JSON.stringify(r.body.data), "ok");
+        } else {
+          show("health", "پاسخ ناموفق: " + r.status, "err");
+        }
+      } catch (e) {
+        show("health", "ارتباط با API برقرار نشد.\nابتدا: cd apps\\api && npm run dev\n" + e.message, "err");
+      }
+    }
+
+    async function requestOtp() {
+      const phone = document.getElementById("phone").value.trim();
+      show("otpResult", "در حال ارسال…");
+      try {
+        const r = await req("/auth/otp/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone })
+        });
+        if (r.ok) {
+          show("otpResult", "کد ارسال شد.\n" + JSON.stringify(r.body.data) + "\n\nکد را در ترمینال API ببینید (خط [SMS]).", "ok");
+          document.getElementById("otpRow").style.display = "block";
+          document.getElementById("btnVerify").style.display = "block";
+        } else {
+          show("otpResult", "خطا: " + JSON.stringify(r.body.error || r.body), "err");
+        }
+      } catch (e) {
+        show("otpResult", "API در دسترس نیست: " + e.message, "err");
+      }
+    }
+
+    async function verifyOtp() {
+      const phone = document.getElementById("phone").value.trim();
+      const code = document.getElementById("code").value.trim();
+      show("authResult", "در حال ورود…");
+      try {
+        const r = await req("/auth/otp/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phone, code })
+        });
+        if (r.ok) {
+          accessToken = r.body.data.tokens.accessToken;
+          show("authResult", "ورود موفق!\nکاربر: " + r.body.data.user.phone + "\nتوکن ذخیره شد (برای سفارش).", "ok");
+        } else {
+          show("authResult", "خطا: " + JSON.stringify(r.body.error || r.body), "err");
+        }
+      } catch (e) {
+        show("authResult", "خطا: " + e.message, "err");
+      }
+    }
+
+    const TYPE_FA = { FOOD: "غذا", MEDICAL: "پزشکی", BEAUTY: "زیبایی", FIELD_SERVICE: "خدمات میدانی", ECOMMERCE: "فروشگاهی" };
+
+    async function loadMap() {
+      const km = document.getElementById("radius").value;
+      show("map", "در حال بارگذاری…");
+      try {
+        const r = await req(`/map/vendors?lat=35.6892&lng=51.389&radiusKm=${km}&zoom=14&exact=1`);
+        if (!r.ok) throw new Error(JSON.stringify(r.body));
+        const data = r.body.data;
+        const vendors = (data.features || []).filter((f) => f.type === "vendor");
+        if (!vendors.length) {
+          show("map", "فروشنده‌ای در این شعاع نیست.");
+          return;
+        }
+        show("map", `تعداد: ${data.total}` + vendors.map((v) => {
+          const dist = v.distanceMeters != null ? (v.distanceMeters < 1000 ? Math.round(v.distanceMeters) + " متر" : (v.distanceMeters/1000).toFixed(1) + " کیلومتر") : "—";
+          return `<div class="item"><strong>${v.businessName}</strong>
+            <span class="tag">${TYPE_FA[v.vendorType] || v.vendorType}</span>
+            ${v.isHomeBased ? '<span class="tag home">خانگی · مبهم</span>' : ""}
+            <div class="muted">${dist}${v.address ? " · " + v.address : ""}</div>
+            <div class="muted">نمایش: ${v.displayLat.toFixed(4)}, ${v.displayLng.toFixed(4)}${v.lat == null ? " (مختصات دقیق مخفی)" : ""}</div>
+          </div>`;
+        }).join(""), "ok");
+      } catch (e) {
+        show("map", "خطا: " + e.message, "err");
+      }
+    }
+
+    async function loadFeed() {
+      show("feed", "…");
+      try {
+        const r = await req("/feed");
+        if (!r.ok) throw new Error(JSON.stringify(r.body));
+        const items = r.body.data || [];
+        if (!items.length) { show("feed", "پستی نیست."); return; }
+        show("feed", items.map((p) => `<div class="item"><strong>${p.businessName || ""}</strong><div>${p.caption}</div></div>`).join(""), "ok");
+      } catch (e) {
+        show("feed", "خطا: " + e.message, "err");
+      }
+    }
+
+    async function loadProfile() {
+      show("profile", "…");
+      try {
+        const r = await req("/vendors/vp_food_1/profile");
+        if (!r.ok) throw new Error(JSON.stringify(r.body));
+        const p = r.body.data;
+        show("profile",
+          `<strong>${p.businessName}</strong>
+           <span class="tag">${TYPE_FA[p.vendorType] || p.vendorType}</span>
+           ${p.isHomeBased ? '<span class="tag home">خانگی</span>' : ""}
+           <div class="muted">${p.description || ""}</div>
+           <div class="muted">نظرات: ${p.reviewSummary.count} · میانگین ${p.reviewSummary.average}</div>
+           <div class="muted">محصولات: ${p.products.map((x) => x.title + " (" + x.priceToman + ")").join("، ") || "—"}</div>
+           <div class="muted">پست‌ها: ${p.posts.length}</div>`, "ok");
+      } catch (e) {
+        show("profile", "خطا: " + e.message, "err");
+      }
+    }
+
+    checkHealth();
+  </script>
+</body>
+</html>

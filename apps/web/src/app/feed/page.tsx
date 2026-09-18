@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
 
 interface FeedItem {
   id: string;
@@ -11,8 +11,7 @@ interface FeedItem {
   createdAt: string;
   businessName: string;
   vendorProfileId: string;
-  images: Array<{ id: string; url: string }>;
-  productTags: Array<{ productId: string; title: string; priceToman: number }>;
+  productTags?: Array<{ productId: string; title: string; priceToman: number }>;
 }
 
 export default function FeedPage() {
@@ -24,13 +23,10 @@ export default function FeedPage() {
       try {
         const res = await fetch(`${API_URL}/api/v1/feed`);
         const body = await res.json();
-        if (res.ok && body.success) {
-          setItems(body.data);
-        } else {
-          setError('خوراک در دسترس نیست');
-        }
+        if (res.ok && body.success) setItems(body.data);
+        else setError('خوراک در دسترس نیست');
       } catch {
-        setError('سرور در دسترس نیست');
+        setError('API روی پورت ۴۰۰۰ بالا نیست');
         setItems([
           {
             id: 'd1',
@@ -38,7 +34,6 @@ export default function FeedPage() {
             createdAt: new Date().toISOString(),
             businessName: 'آشپزخانه مادر',
             vendorProfileId: 'vp_food_1',
-            images: [],
             productTags: [{ productId: 'p1', title: 'قورمه', priceToman: 185000 }],
           },
         ]);
@@ -47,48 +42,49 @@ export default function FeedPage() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-auth flex-col gap-4 px-4 py-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold">خوراک محلی</h1>
-          <p className="text-xs text-ink-muted">پست‌های فروشندگان نزدیک شما</p>
+    <main className="page">
+      <div className="top-nav">
+        <div className="brand">
+          <h1 className="h1">خوراک محلی</h1>
+          <p className="caption">پست‌های فروشندگان نزدیک شما</p>
         </div>
-        <Link href="/" className="text-sm text-accent hover:underline">
+        <Link href="/" className="btn-ghost">
           خانه
         </Link>
-      </header>
+      </div>
 
-      {error && <p className="text-xs text-danger">{error}</p>}
+      {error && <div className="alert alert-error">{error}</div>}
 
-      <section className="space-y-3">
+      <section>
         {items.map((item) => (
-          <article key={item.id} className="card-auth space-y-2">
-            <Link
-              href={`/vendors/${item.vendorProfileId}`}
-              className="text-sm font-bold text-accent hover:underline"
-            >
+          <article key={item.id} className="list-card">
+            <Link href={`/vendors/${item.vendorProfileId}`} className="text-accent">
               {item.businessName}
             </Link>
-            <p className="text-sm leading-7">{item.caption}</p>
-            {item.productTags.length > 0 && (
-              <ul className="text-xs text-ink-muted">
+            <p className="mt-2 text-sm leading-7">{item.caption}</p>
+            {item.productTags && item.productTags.length > 0 && (
+              <ul className="list-none mt-2">
                 {item.productTags.map((t) => (
-                  <li key={t.productId} className="flex justify-between">
+                  <li key={t.productId} className="row-between text-xs text-muted">
                     <span>{t.title}</span>
-                    <span>{t.priceToman.toLocaleString('fa-IR')} تومان</span>
+                    <span className="price">{t.priceToman.toLocaleString('fa-IR')} تومان</span>
                   </li>
                 ))}
               </ul>
             )}
-            <time className="block text-[10px] text-ink-muted">
+            <time className="caption block mt-2">
               {new Date(item.createdAt).toLocaleDateString('fa-IR')}
             </time>
           </article>
         ))}
         {!error && items.length === 0 && (
-          <p className="card-auth text-sm text-ink-muted">پستی هنوز منتشر نشده است.</p>
+          <div className="card body-muted">پستی هنوز منتشر نشده است.</div>
         )}
       </section>
+
+      <Link href="/map" className="btn-secondary">
+        مشاهده نقشه
+      </Link>
     </main>
   );
 }

@@ -202,6 +202,25 @@ function main() {
   const rawPort = Number(process.env.PORT);
   const port = Number.isFinite(rawPort) && rawPort > 0 && rawPort < 65536 ? rawPort : 4000;
 
+  /** @type {Array<{method:string, pattern:RegExp, handler:Function}>} */
+  const routes = [];
+  function match(method, pattern, handler) {
+    // pattern like '/orders/:id/transitions'
+    const rx = new RegExp(
+      '^' +
+        pattern.replace(/\//g, '\\/').replace(/:([A-Za-z0-9_]+)/g, '(?<$1>[^/]+)') +
+        '$',
+    );
+    routes.push({ method, pattern: rx, handler });
+  }
+
+  try {
+    const { attachVendorRoutes } = require('./vendor-routes.cjs');
+    attachVendorRoutes(ctx, match, json, readBody, authUser);
+  } catch (err) {
+    console.warn('vendor-routes not attached:', (err && err.message) || err);
+  }
+
   const server = http.createServer(async (req, res) => {
     const url = new URL(req.url, `http://127.0.0.1:${port}`);
     const p = url.pathname.replace(/^\/api\/v1/, '') || '/';
@@ -212,10 +231,17 @@ function main() {
     }
 
     try {
+      for (const r of routes) {
+        if (r.method !== method) continue;
+        const m = p.match(r.pattern);
+        if (!m) continue;
+        return await r.handler(req, res, m.groups || {});
+      }
+
       if (p === '/health' || p === '/api/health') {
         return json(res, 200, {
           success: true,
-          data: { status: 'ok', service: 'nazdik-api-mini', phase: '1-5', offline: true },
+          data: { status: 'ok', service: 'nazdik-api-mini', phase: '1-6', offline: true },
         });
       }
 

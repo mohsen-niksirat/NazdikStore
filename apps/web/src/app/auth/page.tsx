@@ -1,20 +1,25 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, Loader2, MapPin, Pencil } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, MapPin } from 'lucide-react';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:4000';
 
 type Step = 'phone' | 'otp' | 'profile';
 
-type ApiError = { code?: string; message?: string; messageEn?: string; details?: { retryAfterSeconds?: number } };
+type ApiError = {
+  code?: string;
+  message?: string;
+  details?: { retryAfterSeconds?: number };
+};
 
 const VENDOR_TYPES = [
   { value: 'MEDICAL', label: 'پزشکی / ویزیت' },
   { value: 'FOOD', label: 'غذا / آشپزخانه' },
   { value: 'ECOMMERCE', label: 'فروشگاهی' },
-  { value: 'FIELD_SERVICE', label: 'خدمات میدانی / تعمیر' },
-  { value: 'BEAUTY', label: 'زیبایی / نوبت‌دهی' },
+  { value: 'FIELD_SERVICE', label: 'خدمات میدانی' },
+  { value: 'BEAUTY', label: 'زیبایی' },
 ] as const;
 
 function formatFaCountdown(sec: number): string {
@@ -25,7 +30,7 @@ function formatFaCountdown(sec: number): string {
 
 export default function AuthPage() {
   const [step, setStep] = useState<Step>('phone');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState('09123456789');
   const [maskedPhone, setMaskedPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -75,7 +80,7 @@ export default function AuthPage() {
       setStep('otp');
       setTimeout(() => otpRefs.current[0]?.focus(), 50);
     } catch {
-      setError('ارتباط با سرور برقرار نشد. بعداً تلاش کنید.');
+      setError('ارتباط با سرور برقرار نشد. API روی پورت ۴۰۰۰ بالا باشد.');
     } finally {
       setLoading(false);
     }
@@ -145,7 +150,7 @@ export default function AuthPage() {
       }
       setSuccessMsg(
         role === 'VENDOR'
-          ? 'پروفایل فروشنده ثبت شد. پس از تایید، در نقشه نزدیک نمایش داده می‌شوید.'
+          ? 'پروفایل فروشنده ثبت شد.'
           : 'پروفایل شما آماده است.',
       );
     } catch {
@@ -163,123 +168,118 @@ export default function AuthPage() {
     if (digit && index < 4) otpRefs.current[index + 1]?.focus();
   }
 
-  function onOtpKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  }
-
   return (
-    <main className="mx-auto flex min-h-screen max-w-auth flex-col justify-center px-5 py-10">
-      <header className="mb-8 text-center">
-        <div className="mb-2 text-2xl font-bold">نزدیک استور</div>
-        <div className="chip-proximity">
-          <MapPin className="h-3.5 w-3.5" aria-hidden />
-          فروشگاه‌های نزدیک شما
+    <main className="page page-center">
+      <div className="top-nav">
+        <div className="brand">
+          <div className="chip-proximity">
+            <MapPin aria-hidden />
+            نزدیک استور
+          </div>
         </div>
-      </header>
+        <Link href="/" className="btn-ghost">
+          خانه
+        </Link>
+      </div>
 
-      <section className="card-auth" aria-live="polite">
+      <section className="card card-hero" aria-live="polite">
         {successMsg ? (
-          <div className="space-y-4 text-center">
-            <div className="text-lg font-bold text-accent">موفق</div>
-            <p className="text-sm leading-7 text-ink-muted">{successMsg}</p>
-            <a href="/" className="btn-primary">
-              بازگشت به خانه
-            </a>
+          <div className="stack-4 center">
+            <h1 className="h1 text-accent">موفق</h1>
+            <p className="body-muted">{successMsg}</p>
+            <Link href="/map" className="btn-primary">
+              رفتن به نقشه
+            </Link>
           </div>
         ) : step === 'phone' ? (
-          <div className="space-y-5">
+          <div className="stack-4">
             <div>
-              <h1 className="text-xl font-bold">ورود / ثبت‌نام</h1>
-              <p className="mt-2 text-sm text-ink-muted">
-                شماره موبایل خود را وارد کنید تا کد تایید پیامک شود.
-              </p>
+              <h1 className="h1">ورود / ثبت‌نام</h1>
+              <p className="body-muted mt-2">شماره موبایل را وارد کنید تا کد تایید پیامک شود.</p>
             </div>
             <form
+              className="stack-3"
               onSubmit={(e) => {
                 e.preventDefault();
                 void requestOtp(phone);
               }}
-              className="space-y-4"
             >
-              <label className="block space-y-1.5">
-                <span className="text-sm font-medium">شماره موبایل</span>
+              <div className="field">
+                <label htmlFor="phone">شماره موبایل</label>
                 <input
+                  id="phone"
+                  className="input-field"
                   type="tel"
                   inputMode="tel"
                   dir="ltr"
                   autoComplete="tel"
-                  className="input-field text-left font-mono tracking-wide"
                   placeholder="09123456789"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   required
                 />
-              </label>
+              </div>
               {error && (
-                <p role="alert" className="text-sm text-danger">
+                <div className="alert alert-error" role="alert">
                   {error}
-                </p>
+                </div>
               )}
               <button type="submit" className="btn-primary" disabled={loading}>
                 {loading ? (
                   <>
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden />
+                    <Loader2 style={{ width: 16, height: 16 }} aria-hidden />
                     در حال ارسال…
                   </>
                 ) : (
                   'ارسال کد تایید'
                 )}
               </button>
+              <p className="caption center">کد در ترمینال API چاپ می‌شود (پیامک واقعی نداریم).</p>
             </form>
           </div>
         ) : step === 'otp' ? (
-          <div className="space-y-5">
-            <div className="flex items-start justify-between gap-3">
+          <div className="stack-4">
+            <div className="row-between">
               <div>
-                <h1 className="text-xl font-bold">کد تایید</h1>
-                <p className="mt-1 font-mono text-sm text-ink-muted" dir="ltr">
+                <h1 className="h1">کد تایید</h1>
+                <p className="mono text-muted mt-1" dir="ltr">
                   {maskedPhone || phone}
                 </p>
               </div>
               <button
                 type="button"
-                className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+                className="btn-ghost"
                 onClick={() => {
                   setStep('phone');
                   setOtp(['', '', '', '', '']);
                   setError(null);
                 }}
               >
-                <Pencil className="h-3.5 w-3.5" aria-hidden />
                 ویرایش
               </button>
             </div>
 
-            <div className="flex justify-center gap-2" dir="ltr">
+            <div className="otp-row">
               {otp.map((digit, i) => (
                 <input
                   key={i}
                   ref={(el) => {
                     otpRefs.current[i] = el;
                   }}
-                  className="input-field h-14 w-12 text-center font-mono text-2xl"
                   inputMode="numeric"
                   autoComplete={i === 0 ? 'one-time-code' : 'off'}
                   maxLength={1}
                   value={digit}
                   onChange={(e) => onOtpChange(i, e.target.value)}
-                  onKeyDown={(e) => onOtpKeyDown(i, e)}
-                  aria-label={`رقم ${i + 1} کد تایید`}
+                  aria-label={`رقم ${i + 1}`}
                 />
               ))}
             </div>
 
             {error && (
-              <p role="alert" className="text-center text-sm text-danger">
+              <div className="alert alert-error" role="alert">
                 {error}
-              </p>
+              </div>
             )}
 
             <button
@@ -288,41 +288,29 @@ export default function AuthPage() {
               disabled={loading || otpValue.length !== 5}
               onClick={() => void verifyOtp()}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden />
-                  در حال بررسی…
-                </>
-              ) : (
-                'ورود'
-              )}
+              {loading ? 'در حال بررسی…' : 'ورود'}
             </button>
 
-            <div className="text-center text-sm text-ink-muted">
+            <div className="countdown">
               {countdown > 0 ? (
                 <span>
-                  ارسال مجدد کد تا <span className="font-mono">{formatFaCountdown(countdown)}</span> دیگر
+                  ارسال مجدد تا <span className="num">{formatFaCountdown(countdown)}</span>
                 </span>
               ) : (
-                <button
-                  type="button"
-                  className="text-accent hover:underline"
-                  disabled={loading}
-                  onClick={() => void requestOtp(phone)}
-                >
+                <button type="button" className="btn-ghost" onClick={() => void requestOtp(phone)}>
                   ارسال مجدد کد
                 </button>
               )}
             </div>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div className="stack-4">
             <div>
-              <h1 className="text-xl font-bold">تکمیل پروفایل</h1>
-              <p className="mt-2 text-sm text-ink-muted">نقش خود را انتخاب کنید.</p>
+              <h1 className="h1">تکمیل پروفایل</h1>
+              <p className="body-muted mt-2">نقش خود را انتخاب کنید.</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2" role="group" aria-label="نقش">
+            <div className="grid grid-cols-2 gap-2">
               {(
                 [
                   { value: 'CONSUMER', label: 'مشتری' },
@@ -332,11 +320,8 @@ export default function AuthPage() {
                 <button
                   key={opt.value}
                   type="button"
-                  className={`min-h-[48px] rounded-control border px-3 text-sm font-medium transition ${
-                    role === opt.value
-                      ? 'border-accent bg-accent-soft text-accent'
-                      : 'border-line bg-white text-ink'
-                  }`}
+                  className={role === opt.value ? 'pill active' : 'pill'}
+                  style={{ minHeight: 48 }}
                   onClick={() => setRole(opt.value)}
                 >
                   {opt.label}
@@ -344,38 +329,29 @@ export default function AuthPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block space-y-1.5">
-                <span className="text-sm font-medium">نام</span>
-                <input
-                  className="input-field"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                />
-              </label>
-              <label className="block space-y-1.5">
-                <span className="text-sm font-medium">نام خانوادگی</span>
-                <input
-                  className="input-field"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                />
-              </label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="field">
+                <label>نام</label>
+                <input className="input-field" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+              </div>
+              <div className="field">
+                <label>نام خانوادگی</label>
+                <input className="input-field" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+              </div>
             </div>
 
             {role === 'VENDOR' && (
-              <div className="space-y-3">
-                <label className="block space-y-1.5">
-                  <span className="text-sm font-medium">نام کسب‌وکار</span>
+              <div className="stack-3">
+                <div className="field">
+                  <label>نام کسب‌وکار</label>
                   <input
                     className="input-field"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
-                    required
                   />
-                </label>
-                <label className="block space-y-1.5">
-                  <span className="text-sm font-medium">نوع فعالیت</span>
+                </div>
+                <div className="field">
+                  <label>نوع فعالیت</label>
                   <select
                     className="input-field"
                     value={vendorType}
@@ -387,14 +363,14 @@ export default function AuthPage() {
                       </option>
                     ))}
                   </select>
-                </label>
+                </div>
               </div>
             )}
 
             {error && (
-              <p role="alert" className="text-sm text-danger">
+              <div className="alert alert-error" role="alert">
                 {error}
-              </p>
+              </div>
             )}
 
             <button
@@ -403,29 +379,13 @@ export default function AuthPage() {
               disabled={loading || (role === 'VENDOR' && !businessName.trim())}
               onClick={() => void completeProfile()}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="ml-2 h-4 w-4 animate-spin" aria-hidden />
-                  در حال ذخیره…
-                </>
-              ) : (
-                'تکمیل پروفایل'
-              )}
+              {loading ? 'در حال ذخیره…' : 'تکمیل پروفایل'}
             </button>
           </div>
         )}
       </section>
 
-      {step !== 'phone' && !successMsg && (
-        <button
-          type="button"
-          className="mx-auto mt-4 inline-flex items-center gap-1 text-sm text-ink-muted hover:text-ink"
-          onClick={() => setStep(step === 'profile' ? 'otp' : 'phone')}
-        >
-          <ArrowLeft className="h-4 w-4 rotate-180" aria-hidden />
-          بازگشت
-        </button>
-      )}
+      <p className="footer-note">کد OTP را از لاگ ترمینال API بخوانید</p>
     </main>
   );
 }
