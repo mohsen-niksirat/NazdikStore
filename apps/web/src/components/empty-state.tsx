@@ -6,11 +6,13 @@ export function EmptyState({
   body,
   actionHref,
   actionLabel,
+  icon = '✦',
 }: {
   title: string;
   body?: string;
   actionHref?: string;
   actionLabel?: string;
+  icon?: string;
   children?: ReactNode;
 }) {
   return (
@@ -18,20 +20,20 @@ export function EmptyState({
       <div
         aria-hidden
         style={{
-          width: 48,
-          height: 48,
+          width: 52,
+          height: 52,
           margin: '0 auto',
-          borderRadius: 14,
-          background: 'var(--accent-soft)',
-          color: 'var(--accent)',
+          borderRadius: 16,
+          background: 'var(--grad-hero)',
+          color: '#fff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: 800,
         }}
       >
-        ✦
+        {icon}
       </div>
       <h2 className="h2">{title}</h2>
       {body && <p className="body-muted text-sm">{body}</p>}
@@ -40,6 +42,7 @@ export function EmptyState({
           {actionLabel}
         </Link>
       )}
+      {children}
     </div>
   );
 }

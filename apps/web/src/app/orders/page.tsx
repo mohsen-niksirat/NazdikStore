@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
+import { EmptyState } from '@/components/empty-state';
 
 const TOKEN_KEY = 'nazdik_token';
 const USER_KEY = 'nazdik_user';
@@ -161,17 +162,12 @@ export default function OrdersPage() {
       {err && <div className="alert alert-error">{err}</div>}
 
       {orders.length === 0 && !err && (
-        <div className="card stack-3 center">
-          <p className="body-muted">هنوز سفارشی ندارید.</p>
-          <div className="btn-row">
-            <Link href="/cart" className="btn-primary">
-              رفتن به سبد خرید
-            </Link>
-            <Link href="/book" className="btn-secondary">
-              رزرو نوبت
-            </Link>
-          </div>
-        </div>
+        <EmptyState
+          title="هنوز سفارشی ندارید"
+          body="از سبد خرید یا نوبت‌دهی شروع کنید — بعداً همه چیز را اینجا می‌بینید."
+          actionHref="/cart"
+          actionLabel="رفتن به سبد خرید"
+        />
       )}
 
       {orders.map((o) => (
