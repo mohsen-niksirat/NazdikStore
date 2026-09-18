@@ -79,8 +79,6 @@ export default function CartPage() {
     );
   }, [coupon, cart]);
 
-  const finalTotal = Math.max(0, total - discount);
-
   useEffect(() => {
     const t = localStorage.getItem(TOKEN_KEY);
     const u = localStorage.getItem(USER_KEY);
@@ -307,9 +305,44 @@ export default function CartPage() {
         ))}
         {cart.length > 0 && (
           <>
+            <div className="field">
+              <label>کد تخفیف</label>
+              <div className="flex gap-2">
+                <input
+                  className="input-field"
+                  dir="ltr"
+                  placeholder="PERCENT20"
+                  value={coupon}
+                  onChange={(e) => setCoupon(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  style={{ width: 'auto', minWidth: 72 }}
+                  onClick={() => void applyCoupon()}
+                >
+                  اعمال
+                </button>
+              </div>
+            </div>
+            {couponMsg && (
+              <div className={discount > 0 || freeDelivery ? 'alert alert-ok' : 'alert alert-error'}>
+                {couponMsg}
+              </div>
+            )}
             <div className="row-between" style={{ borderTop: '1px solid var(--line)', paddingTop: 10 }}>
               <span>جمع کل</span>
               <span className="price">{fmt(total)} تومان</span>
+            </div>
+            {discount > 0 && (
+              <div className="row-between text-sm">
+                <span className="text-accent">تخفیف</span>
+                <span className="text-accent">−{fmt(discount)}</span>
+              </div>
+            )}
+            <div className="row-between">
+              <span>قابل پرداخت</span>
+              <span className="price">{fmt(Math.max(0, total - discount))} تومان</span>
             </div>
             <div className="field">
               <label>آدرس تحویل</label>

@@ -78,6 +78,18 @@ export default function HomePage() {
         <Link href="/profile" className="btn-secondary">
           پروفایل من
         </Link>
+        <Link href="/assistant" className="btn-secondary">
+          دستیار هوشمند
+        </Link>
+        <Link href="/search" className="btn-secondary">
+          جستجو
+        </Link>
+        <Link href="/track" className="btn-secondary">
+          رهگیری پیک
+        </Link>
+        <Link href="/settings" className="btn-secondary">
+          تنظیمات
+        </Link>
       </section>
 
       <p className="footer-note">NazdikStore · hyperlocal marketplace</p>
