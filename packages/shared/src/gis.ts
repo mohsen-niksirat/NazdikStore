@@ -38,16 +38,15 @@ export type ProximityEstimate = {
   walkMinutes: number;
   bikeMinutes: number;
   carMinutes: number;
-  /** Persian label e.g. "۳۵۰ متر فاصله" */
   faDistance: string;
   faWalk: string;
   faCar: string;
 };
 
-const FA_DIGITS = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
-
-export function toFaDigits(n: number | string): string {
-  return String(n).replace(/\d/g, (d) => FA_DIGITS[Number(d)]);
+// Persian digits live in jalali.ts (single export — do not duplicate)
+function faDigits(n: number | string): string {
+  const FA = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
+  return String(n).replace(/\d/g, (d) => FA[Number(d)]);
 }
 
 export function estimateProximity(from: LatLng, to: LatLng): ProximityEstimate {
@@ -62,10 +61,10 @@ export function estimateProximity(from: LatLng, to: LatLng): ProximityEstimate {
     carMinutes,
     faDistance:
       distanceMeters < 1000
-        ? `${toFaDigits(distanceMeters)} متر فاصله`
-        : `${toFaDigits((distanceMeters / 1000).toFixed(1))} کیلومتر فاصله`,
-    faWalk: `${toFaDigits(walkMinutes)} دقیقه پیاده`,
-    faCar: `${toFaDigits(carMinutes)} دقیقه با خودرو`,
+        ? `${faDigits(distanceMeters)} متر فاصله`
+        : `${faDigits((distanceMeters / 1000).toFixed(1))} کیلومتر فاصله`,
+    faWalk: `${faDigits(walkMinutes)} دقیقه پیاده`,
+    faCar: `${faDigits(carMinutes)} دقیقه با خودرو`,
   };
 }
 
